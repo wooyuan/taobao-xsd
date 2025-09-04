@@ -167,14 +167,6 @@ public class StoreScrollQueryServices {
                 "  VALUES (get_sequences('xsd_item_sku'),s.outer_sku_id, s.sku_id, s.outer_item_id, s.item_id, s.online_sale_flag, s.store_id, s.prepare_time, SYSTIMESTAMP, SYSTIMESTAMP)";
 
 
-        SingleConnectionDataSource dataSource = new SingleConnectionDataSource();
-        dataSource.setDriverClassName("oracle.jdbc.OracleDriver");
-        dataSource.setUrl("jdbc:oracle:thin:@10.100.21.151:1521/orcl");
-        dataSource.setUsername("neands3");
-        dataSource.setPassword("abc123");
-        // 创建JdbcTemplate实例
-        JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
-
         jdbcTemplate.batchUpdate(sql, new BatchPreparedStatementSetter() {
             @Override
             public void setValues(PreparedStatement ps, int i) throws SQLException {

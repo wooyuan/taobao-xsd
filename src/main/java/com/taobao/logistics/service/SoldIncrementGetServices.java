@@ -293,16 +293,6 @@ public class SoldIncrementGetServices {
             }
         }
 
-
-        SingleConnectionDataSource dataSource = new SingleConnectionDataSource();
-        dataSource.setDriverClassName("oracle.jdbc.OracleDriver");
-        dataSource.setUrl("jdbc:oracle:thin:@10.100.21.151:1521/orcl");
-        dataSource.setUsername("neands3");
-        dataSource.setPassword("abc123");
-
-        // 创建JdbcTemplate实例
-        JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
-
         // 批量保存主订单
         jdbcTemplate.batchUpdate(MERGE_MAIN_ORDERS_SQL, new BatchPreparedStatementSetter() {
             @Override

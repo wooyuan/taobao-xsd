@@ -10,7 +10,7 @@ import org.springframework.stereotype.Component;
 // 或者
 @Component      // 如果这是普通组件
 public class LogisticsConfig {
-
+   //电子面单
     public static final String APP_KEY = "32976438";
     public static final String APP_SECRET = "e1e0d454cf5440873992b20ba6119d3d";
     public static final String WS_URL = "ws://127.0.0.1:13528";

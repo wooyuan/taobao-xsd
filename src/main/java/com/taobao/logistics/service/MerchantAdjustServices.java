@@ -40,14 +40,6 @@ public class MerchantAdjustServices {
         String currentDate = new SimpleDateFormat(DATE_FORMAT).format(new Date());
 
         try {
-            SingleConnectionDataSource dataSource = new SingleConnectionDataSource();
-            dataSource.setDriverClassName("oracle.jdbc.OracleDriver");
-            dataSource.setUrl("jdbc:oracle:thin:@10.100.21.151:1521/orcl");
-            dataSource.setUsername("neands3");
-            dataSource.setPassword("abc123");
-            // 创建JdbcTemplate实例
-            JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
-
             // 查询需要更新的数据
             List<Map<String, Object>> results = jdbcTemplate.queryForList(querySql);
 

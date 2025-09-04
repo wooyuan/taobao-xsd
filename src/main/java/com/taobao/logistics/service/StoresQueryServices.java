@@ -124,13 +124,7 @@ public class StoresQueryServices {
         String sql = "update   xsd_stores b set b.c_store_id= (\n" +
                 "select id from c_store@bj_70 a where a.name=b.store_name)\n" +
                 "where b.c_store_id is null" ;
-       SingleConnectionDataSource dataSource = new SingleConnectionDataSource();
-        dataSource.setDriverClassName("oracle.jdbc.OracleDriver");
-        dataSource.setUrl("jdbc:oracle:thin:@10.100.21.151:1521/orcl");
-        dataSource.setUsername("neands3");
-        dataSource.setPassword("abc123");
-        // 创建JdbcTemplate实例
-        JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+
         int[] updateCounts = jdbcTemplate.batchUpdate(sql);
          }
     /**
