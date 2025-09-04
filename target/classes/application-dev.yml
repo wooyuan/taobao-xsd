@@ -1,0 +1,32 @@
+spring:
+    datasource:
+      type: com.alibaba.druid.pool.DruidDataSource
+      driver-class-name: oracle.jdbc.OracleDriver
+      url: jdbc:oracle:thin:@10.100.21.181:1521/orcl
+      username: neands3
+      password: abc123
+    jpa:
+#      hibernate:
+#        ddl-auto: update
+      show-sql: true
+      open-in-view: false
+    application:
+      name: spring-data-jpa-demo
+#
+## MyBatis
+#mybatis:
+#    # 搜索指定包别名
+#    typeAliasesPackage: com.warehouse.project.**.domain
+#    # 配置mapper的扫描，找到所有的mapper.xml映射文件
+#    mapperLocations: classpath:mybatis/**/*Mapper.xml
+#    # 加载全局的配置文件
+#    configLocation: classpath:mybatis/mybatis-config.xml
+#
+#
+## PageHelper分页插件
+#pagehelper:
+#  helperDialect: mysql
+#  supportMethodsArguments: true
+#  params: count=countSql
+
+

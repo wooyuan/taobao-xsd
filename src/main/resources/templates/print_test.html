@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="UTF-8">
+    <title>菜鸟组件打印</title>
+    <style type="text/css">
+        div#ctlDiv {height:750px;width:50%;float:left;border-style:solid;border-color:red;border-width:0px;}
+        div#pdfDiv {height:750px;width:49%;float:left;border-style:solid;border-color:red;border-width:0px;}
+        input[type='submit']{font-size: 14px;color: blue;}
+    </style>
+    <script type="text/javascript">
+        var socket;
+        var num = 1;
+
+        window.onload = function load()
+        {
+            document.getElementById("pdfDiv").style.visibility="hidden";
+            document.getElementById("printmessage").style.display ="none";
+        }
+
+        function setStatusLabel(msg)
+        {
+            var eStatus = document.getElementById("connectionStatus");
+            eStatus.innerHTML = msg;
+        }
+
+        function doConnect(callback)
+        {
+            var serviceUrl = document.getElementById("serviceUrl").value;
+
+            socket = new WebSocket(serviceUrl);
+
+            // 监听消息
+            socket.onmessage = function(event)
+            {
+                console.log('Client received a message',event);
+                document.getElementById("pdfDiv").style.visibility="hidden";
+                // parse json
+                var obj = eval('('+event.data+')');
+
+                if (obj && (obj.previewURL || obj.previewImage))
+                {
+                    var url;
+                    if (obj && obj.previewURL) {
+                        url = obj.previewURL;
+                    } else if (obj && obj.previewImage) {
+                        url = obj.previewImage;
+                    }
+                    var pdf = document.getElementById('pdf');
+                    if (pdf) {
+                        pdf.setAttribute('src', url);
+                        document.getElementById("pdfDiv").style.visibility="visible";
+                    }
+                }
+                var resultElement = document.getElementById("resultMessage");
+                resultElement.value = resultElement.value + event.data + "\n";
+                resultElement.scrollTop = resultElement.scrollHeight;
+                if (num === 1) {
+                    alert(event.data);
+                    num++;
+                }
+            };
+
+            socket.onopen = function(event)
+            {
+                if (callback != null) {
+                    callback();
+                }
+                setStatusLabel("已连接");
+            }
+
+            socket.onerror = function(error)
+            {
+                console.log("Failed to connect CN print at " + serviceUrl, error);
+                setStatusLabel("连接错误");
+            }
+
+            // 监听Socket的关闭
+            socket.onclose = function(event)
+            {
+                console.log('Client notified socket has closed',event);
+                setStatusLabel("连接关闭");
+            };
+        }
+
+        function sendCommand()
+        {
+            if (typeof socket == "undefined" || socket.readyState == WebSocket.CLOSED) {
+                num = 1;
+                doConnect(sendCommand);
+                return;
+            }
+
+            if (socket.readyState != WebSocket.OPEN) {
+                alert("无效连接: " + socket.readyState);
+                return;
+            }
+
+            var msg = document.getElementById('printmessage').value;
+            // var repeatCount = document.getElementById('repeatCount').value;
+            // var isPreview = document.getElementById('isPreview').checked;
+            var repeatCount = 1;
+            var isPreview = false;
+            var time = new Date().getTime();
+
+            for (var index = 0; index < repeatCount; index++) {
+                var obj = JSON.parse(msg);
+
+                if (obj["task"])
+                {
+                    // taskID
+                    obj["task"]["taskID"] = time.toString() + "_TASK_" + index;
+
+                    // preview
+                    obj["task"]["preview"] = isPreview;
+                }
+
+                var newMsg = JSON.stringify(obj);
+                socket.send(newMsg);
+            }
+        }
+
+        function clearResult()
+        {
+            var resultElement = document.getElementById("resultMessage");
+            resultElement.value = "";
+        }
+    </script>
+
+
+</head>
+<body>
+
+<div id="ctlDiv">
+
+    <form name="formname" action="javascript:sendCommand()">
+        <p style="display: none">重复发送请求：<input id="repeatCount" type="number" min="1" max="1000" step="1" value="1">&nbsp;&nbsp;&nbsp;
+            <input id="isPreview" type="checkbox" checked="flase">预览模式
+        </p>
+        <p style="display: none">	服务器: <input type="text" id="serviceUrl" name="serviceUrl" value="ws://localhost:13528"/>
+            <label id="connectionStatus">未知</label>
+        </p>
+        <input type="submit" value="菜鸟组件打印"/>
+        <br/>
+        <textarea cols="60" rows="10" id="printmessage" name="printmessage" th:text="${printmessage}">
+
+        </textarea>
+        <br/><br/>
+        <textarea cols="60" rows="10" id="resultMessage" name="resultMessage" readonly="readonly" style="display: none"></textarea>
+        <br/>
+        <input type="button" value="清空返回消息" onclick="clearResult()" style="display: none"/>
+    </form>
+</div>
+
+<div id="pdfDiv" align="middle">
+    <iframe id="pdf" src="" width="100%" height="100%">
+    </iframe>
+</div>
+
+</body>
+</html>

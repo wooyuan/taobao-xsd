@@ -1,0 +1,44 @@
+spring:
+  profiles:
+#    active: dev
+#
+    active: druid
+  thymeleaf:
+    mode: HTML
+    encoding: utf-8
+    # 禁用缓存
+    cache: false
+  # 资源信息
+  messages:
+    # 国际化资源文件路径
+    basename: static/i18n/messages
+  jackson:
+    time-zone: GMT+8
+    date-format: yyyy-MM-dd HH:mm:ss
+#    default-property-inclusion: non_null
+#  servlet:
+#    multipart:
+#      max-file-size: 2MB
+#      max-request-size: 10MB
+
+server:
+  port: 9214
+logging:
+  level:
+    com.taobao.logistics: debug
+  file:
+#    不生效
+    path: ${user.dir}/LOG/
+    name: taobao.log
+
+# 用户配置
+user:
+  password:
+    # 密码错误{maxRetryCount}次锁定10分钟
+    maxRetryCount: 10
+hswing:
+  os-name: ${os.name}
+  profile: ${user.dir}${file.separator}upload${file.separator}upload
+  linux-upload: /home/test/upload
+
+

@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>打印</title>
+    <style type="text/css">
+        input {
+            font-size: 14px;
+            color: blue;
+        }
+    </style>
+</head>
+<body>
+
+<p>单击按钮触发函数。</p>
+<button onclick="myFunction()">点我</button>
+<p id="demo"></p>
+
+<input type="button" onclick="doPrint()" value="菜鸟组件打印"/>
+<input type="button" onclick ="afterClick()" id="btn" value="点击"/>
+<input type="button" onclick="javascript:alert('click!')" value="菜鸟组件打印"/>
+<button onclick="myFunction('123')">点击我</button>
+
+<script>
+    function myFunction(){
+        document.getElementById("demo").innerHTML="Hello World\n";
+        console.log("Hello World");
+    }
+
+    function doPrint() {
+        console.log(123)
+    }
+
+
+</script>
+<script>
+    // function myFunction(msg) {
+    //     alert(msg);
+    //     console.log(msg);
+    // }
+    //
+    // var afterClick = function() {
+    //     console.log("click...afterClick()")
+    // }
+
+
+
+    function doConnect() {
+        socket = new WebSocket('ws://localhost:13528');
+        //如果是https的话，端口是13529
+        //socket = new WebSocket('wss://localhost:13529');
+        // 打开Socket
+        socket.onopen = function (event) {
+            // 监听消息
+            socket.onmessage = function (event) {
+                console.log('Client received a message', event);
+            };
+            // 监听Socket的关闭
+            socket.onclose = function (event) {
+                console.log('Client notified socket has closed', event);
+            };
+        };
+    }
+
+    /***
+     *
+     * 获取请求的UUID，指定长度和进制,如
+     * getUUID(8, 2)   //"01001010" 8 character (base=2)
+     * getUUID(8, 10) // "47473046" 8 character ID (base=10)
+     * getUUID(8, 16) // "098F4D35"。 8 character ID (base=16)
+     *
+     */
+    function getUUID(len, radix) {
+        var chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'.split('');
+        var uuid = [], i;
+        radix = radix || chars.length;
+        if (len) {
+            for (i = 0; i < len; i++) uuid[i] = chars[0 | Math.random() * radix];
+        } else {
+            var r;
+            uuid[8] = uuid[13] = uuid[18] = uuid[23] = '-';
+            uuid[14] = '4';
+            for (i = 0; i < 36; i++) {
+                if (!uuid[i]) {
+                    r = 0 | Math.random() * 16;
+                    uuid[i] = chars[(i == 19) ? (r & 0x3) | 0x8 : r];
+                }
+            }
+        }
+        return uuid.join('');
+    }
+
+    /***
+     * 构造request对象
+     */
+    function getRequestObject(cmd) {
+        var request = new Object();
+        request.requestID = getUUID(8, 16);
+        request.version = "1.0";
+        request.cmd = cmd;
+        return request;
+    }
+
+    /***
+     * 获取自定义区数据以及模板URL
+     * waybillNO 电子面单号
+     */
+    function getCustomAreaData(waybillNO){
+        //获取waybill对应的自定义区的JSON object，此处的ajaxGet函数是伪代码
+        // var jsonObject = ajaxGet(waybillNO);
+        var ret = new Object();
+        // ret.templateURL=jsonObject.content.templateURL;
+        // ret.data=jsonObject.content.data;
+        ret.data = "{\"cmd\":\"print\",\"requestID\":\"123458976\",\"version\":\"1.0\",\"task\":{\"taskID\":\"7293666\",\"preview\":false,\"printer\":\"\",\"previewType\":\"pdf\",\"documents\":[{\"documentID\":\"0123456789\",\"contents\":[{\"data\":{\"recipient\":{\"address\":{\"city\":\"杭州市\",\"detail\":\"良睦路999号乐佳国际大厦2号楼小邮局\",\"district\":\"余杭区\",\"province\":\"浙江省\",\"town\":\"\"},\"mobile\":\"13012345678\",\"name\":\"菜鸟网络\"},\"routingInfo\":{\"consolidation\":{\"name\":\"杭州\",\"code\":\"hangzhou\"},\"origin\":{\"name\":\"杭州\",\"code\":\"POSTB\"},\"sortation\":{\"name\":\"杭州\"},\"routeCode\":\"123A-456-789\"},\"sender\":{\"address\":{\"city\":\"杭州市\",\"detail\":\"文一西路1001号阿里巴巴淘宝城5号小邮局\",\"district\":\"余杭区\",\"province\":\"浙江省\",\"town\":\"\"},\"mobile\":\"13012345678\",\"name\":\"阿里巴巴\"},\"waybillCode\":\"0123456789\"},\"signature\":\"19d6f7759487e556ddcdd3d499af087080403277b7deed1a951cc3d9a93c42a7e22ccba94ff609976c5d3ceb069b641f541bc9906098438d362cae002dfd823a8654b2b4f655e96317d7f60eef1372bb983a4e3174cc8d321668c49068071eaea873071ed683dd24810e51afc0bc925b7a2445fdbc2034cdffb12cb4719ca6b7\",\"templateURL\":\"http://cloudprint.cainiao.com/template/standard/301\"}]}]}}";
+        ret.templateURL = "http://cloudprint.cainiao.com/template/standard/301";
+        return ret;
+    }
+
+    /***
+     * 获取电子面单Json 数据
+     * waybillNO 电子面单号
+     */
+    function getWaybillJson(waybillNO){
+        //获取waybill对应的json object，此处的ajaxGet函数是伪代码
+        // var jsonObject = ajaxGet(waybillNO);
+        var jsonObject = "";
+        return jsonObject;
+    }
+    /**
+     * 请求打印机列表demo
+     * */
+    var request = getRequestObject("getPrinters");
+    webSocket.send(JSON.stringify(request));
+    /**
+     * 弹窗模式配置打印机
+     * */
+    var request = getRequestObject("printerConfig");
+    webSocket.send(JSON.stringify(request));
+
+    /**
+     * 响应请求demo
+     * */
+    websocket.onmessage = function (event) {
+        var response = eval(event.data);
+        if (response.cmd == 'getPrinters') {
+            getPrintersHandler(response);//处理打印机列表
+        } else if (response.cmd == 'printerConfig') {
+            printConfigHandler(response);
+        }
+    };
+    /**
+     * 打印电子面单
+     * printer 指定要使用那台打印机
+     * waybillArray 要打印的电子面单的数组
+     */
+    function doPrint(waybillArray) {
+        var request = getRequestObject("print");
+        request.task = new Object();
+        request.task.taskID = getUUID(8, 10);
+        request.task.preview = false;
+        request.task.printer = "";
+        var documents = new Array();
+        for (var i = 0; i < waybillArray.length; i++) {
+            var doc = new Object();
+            doc.documentID = waybillArray[i];
+            var content = new Array();
+            var waybillJson = getWaybillJson(waybillArray[i]);
+            // var customAreaData = getCustomAreaData(waybillArray[i]);
+            var customAreaData = "{\"_dataFrom\":\"waybill\",\"adsInfo\":{\"adId\":\"2167\",\"advertisementType\":\"COMMERCIAL\",\"bannerUrl\":\"http://ad-cdn.cainiao.com/1487/1629429475627.jpg\",\"miniBannerUrl\":\"http://ad-cdn.cainiao.com/1487/1629353637065.jpg\",\"trackUrl\":\"https://ad.cainiao.com/CcsKBEf\"},\"cpCode\":\"ZTO\",\"extraInfo\":{},\"needEncrypt\":false,\"packageInfo\":{\"id\":\"TB2108200151\",\"items\":[{\"count\":1,\"name\":\"纪念日百货\"}],\"volume\":0,\"weight\":0},\"parent\":false,\"recipient\":{\"address\":{\"detail\":\"AES:7YwrwiUnGdhhFcHoxiigVqcdhcWUy0okNIcbXsI4jq/a1cowOm83qIwiLjXYQsqcwUS0YY/LICr+4NaydY9imNKR7fsL8WnvA83RPbgdEPGBHwmL9QVgov4WP9xLu1Lf\",\"province\":\"安徽省\"},\"mobile\":\"AES:rkGbsH1eW4y1+uL0mG88tw==\",\"name\":\"AES:RcY6w1ecNHpnCSxwc0xlbw==\",\"tid\":\"2044371422281348318\"},\"routingInfo\":{\"blockCode\":\"河畔c区\",\"consolidation\":{\"name\":\"合肥庐阳三部\"},\"endCodeId\":\"454723\",\"endCodeType\":\"1\",\"origin\":{\"code\":\"55156\",\"name\":\"合肥庐阳产业园\"},\"receiveBranch\":{\"code\":\"55122\",\"name\":\"合肥庐阳三部\"},\"routeCode\":\"F-04 A08\",\"sortation\":{\"name\":\"460B-\"},\"startCenter\":{},\"terminalCenter\":{}},\"sender\":{\"address\":{\"city\":\"合肥市\",\"detail\":\"天河路与天水路交口往南100米天河路1001号\",\"district\":\"庐阳区\",\"province\":\"安徽省\"},\"mobile\":\"15055190645\",\"name\":\"袁冬冬\"},\"shippingOption\":{\"code\":\"STANDARD_EXPRESS\",\"title\":\"标准快递\"},\"waybillCode\":\"75499972452855\"}";
+            content.push(waybillJson, customAreaData);
+            doc.content = content;
+            documents.push(doc);
+        }
+        socket.send(JSON.stringify(request));
+    }
+</script>
+</body>
+</html>
