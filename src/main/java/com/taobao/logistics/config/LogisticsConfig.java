@@ -20,6 +20,7 @@ public class LogisticsConfig {
     public static final String XSDAPP_KEY = "35067517";
     public static final String XSDAPP_SECRET = "ce616e52d2fd9e52fcbabc33f48a4255";
     public static final String XSDWS_URL = "ws://127.0.0.1:13528";
+    public static final String SESSIONKEY = "6102912579c7e2db03f113a1f0f73b8ae8ea04b348cd2bd1757633411";
     public static final String XSDAPP_FIRST_STORE = "一本铺男装";
 
     //appkey:33085433

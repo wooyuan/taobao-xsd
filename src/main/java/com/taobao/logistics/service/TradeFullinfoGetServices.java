@@ -32,7 +32,7 @@ public class TradeFullinfoGetServices {
     public JSONObject printjson( ) throws ApiException {
         String appkey = LogisticsConfig.XSDAPP_KEY;
         String secret = LogisticsConfig.XSDAPP_SECRET;
-        String sessionKey = "6102912579c7e2db03f113a1f0f73b8ae8ea04b348cd2bd1757633411";
+        String sessionKey = LogisticsConfig.SESSIONKEY;
         TaobaoClient client = new DefaultTaobaoClient(url, LogisticsConfig.XSDAPP_KEY, LogisticsConfig.XSDAPP_SECRET);
 
         TradeFullinfoGetRequest req = new TradeFullinfoGetRequest();

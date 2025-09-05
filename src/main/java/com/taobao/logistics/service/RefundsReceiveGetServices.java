@@ -35,7 +35,7 @@ public class RefundsReceiveGetServices {
 
     public void pullAllRefunds(String startday,String endday ) throws ApiException {
         TaobaoClient client = new DefaultTaobaoClient(URL, LogisticsConfig.XSDAPP_KEY, LogisticsConfig.XSDAPP_SECRET);
-        String sessionKey = "6102912579c7e2db03f113a1f0f73b8ae8ea04b348cd2bd1757633411";
+        String sessionKey = LogisticsConfig.SESSIONKEY;
 
         int pageNo = 1;
         boolean hasNext = true;

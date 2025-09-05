@@ -30,7 +30,7 @@ public class MerchantAdjustServices {
     private static final String URL = "http://gw.api.taobao.com/router/rest";
     private static final String DATE_FORMAT = "yyyyMMdd";
     private static final int MAX_RETRY = 3;
-    private static final String SESSION_KEY = "6102912579c7e2db03f113a1f0f73b8ae8ea04b348cd2bd1757633411";
+    private static final String SESSION_KEY = LogisticsConfig.SESSIONKEY;
 
     public void updateInventory() {
         String querySql = "SELECT id, store_id, qty, item_id, sku_id FROM xsd_qty WHERE is_tb IS NULL";

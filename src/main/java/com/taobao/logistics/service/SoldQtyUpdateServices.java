@@ -41,7 +41,7 @@ public class SoldQtyUpdateServices {
         req.setPageSize(40L);
         req.setUseHasNext(true);
 
-        String sessionKey = "6102912579c7e2db03f113a1f0f73b8ae8ea04b348cd2bd1757633411";
+        String sessionKey = LogisticsConfig.SESSIONKEY;
         TradesSoldGetResponse rsp = client.execute(req, sessionKey);
         System.out.println(rsp.getBody());
         return null ;

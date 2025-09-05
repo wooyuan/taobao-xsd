@@ -107,7 +107,7 @@ public class SoldgetServices {
         int totalOrders = 0;
 
         TaobaoClient client = new DefaultTaobaoClient(URL, logisticsConfig.XSDAPP_KEY, logisticsConfig.XSDAPP_SECRET);
-        String sessionKey = "6102912579c7e2db03f113a1f0f73b8ae8ea04b348cd2bd1757633411";
+        String sessionKey = LogisticsConfig.SESSIONKEY;
 
         while (hasNext) {
             log.info("正在获取第 {} 页订单数据", pageNo);
@@ -209,14 +209,14 @@ public class SoldgetServices {
      * 批量合并订单数据到Oracle（使用MERGE INTO）
      */
     private void batchMergeOrders(List<JSONObject> orderList) {
-//        StoresQueryServices service = new StoresQueryServices();
-//        SingleConnectionDataSource dataSource = new SingleConnectionDataSource();
-//        dataSource.setDriverClassName("oracle.jdbc.OracleDriver");
-//        dataSource.setUrl("jdbc:oracle:thin:@10.100.21.181:1521/orcl");
-//        dataSource.setUsername("neands3");
-//        dataSource.setPassword("abc123");
-//        // 创建JdbcTemplate实例
-//        JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+        StoresQueryServices service = new StoresQueryServices();
+        SingleConnectionDataSource dataSource = new SingleConnectionDataSource();
+        dataSource.setDriverClassName("oracle.jdbc.OracleDriver");
+        dataSource.setUrl("jdbc:oracle:thin:@10.100.21.151:1521/orcl");
+        dataSource.setUsername("neands3");
+        dataSource.setPassword("abc123");
+        // 创建JdbcTemplate实例
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
         jdbcTemplate.batchUpdate(MERGE_ORDER_SQL, new BatchPreparedStatementSetter() {
             @Override
             public void setValues(PreparedStatement ps, int i) throws SQLException {

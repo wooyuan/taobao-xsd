@@ -33,7 +33,7 @@ public class StoresQueryServices {
     private JdbcTemplate jdbcTemplate;
 
     private static final String URL = "http://gw.api.taobao.com/router/rest";
-    private static final String SESSION_KEY = "6102912579c7e2db03f113a1f0f73b8ae8ea04b348cd2bd1757633411";
+    private static final String SESSION_KEY = LogisticsConfig.SESSIONKEY;
 
     @Autowired
     private LogisticsConfig logisticsConfig;
@@ -125,6 +125,13 @@ public class StoresQueryServices {
                 "select id from c_store@bj_70 a where a.name=b.store_name)\n" +
                 "where b.c_store_id is null" ;
 
+        SingleConnectionDataSource dataSource = new SingleConnectionDataSource();
+        dataSource.setDriverClassName("oracle.jdbc.OracleDriver");
+        dataSource.setUrl("jdbc:oracle:thin:@10.100.21.151:1521/orcl");
+        dataSource.setUsername("neands3");
+        dataSource.setPassword("abc123");
+        // 创建JdbcTemplate实例
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
         int[] updateCounts = jdbcTemplate.batchUpdate(sql);
          }
     /**
@@ -165,6 +172,19 @@ public class StoresQueryServices {
             dataSource.setPassword("abc123");
             // 创建JdbcTemplate实例
             JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+//            if (jdbcTemplate == null) {
+//                log.info("JdbcTemplate is NULL!");
+//            } else {
+//                log.info("JdbcTemplate injected successfully");
+//                try {
+//                    // 尝试执行一个简单查询
+//                    jdbcTemplate.queryForObject("SELECT 1 FROM DUAL", Integer.class);
+//                    log.info("Database connection test passed");
+//                } catch (Exception e) {
+//                    log.info("Database connection test failed: " + e.getMessage());
+//                }
+//            }
+
             int[] updateCounts = jdbcTemplate.batchUpdate(sql, new org.springframework.jdbc.core.BatchPreparedStatementSetter() {
                 @Override
                 public void setValues(PreparedStatement ps, int i) throws SQLException {
@@ -310,6 +330,7 @@ public class StoresQueryServices {
     public static void main(String[] args) {
         try {
             StoresQueryServices service = new StoresQueryServices();
+
 //            SingleConnectionDataSource dataSource = new SingleConnectionDataSource();
 //            dataSource.setDriverClassName("oracle.jdbc.OracleDriver");
 //            dataSource.setUrl("jdbc:oracle:thin:@10.100.21.181:1521/orcl");

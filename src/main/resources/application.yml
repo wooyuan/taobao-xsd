@@ -26,6 +26,9 @@ server:
 logging:
   level:
     com.taobao.logistics: debug
+    org.springframework.jdbc: DEBUG
+    org.springframework.boot.autoconfigure.jdbc: DEBUG
+    com.alibaba.druid: DEBUG
   file:
 #    不生效
     path: ${user.dir}/LOG/
