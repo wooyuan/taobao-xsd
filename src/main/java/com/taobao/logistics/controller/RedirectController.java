@@ -2,7 +2,6 @@ package com.taobao.logistics.controller;
 
 import com.alibaba.fastjson.JSONObject;
 import com.taobao.api.ApiException;
-import com.taobao.logistics.entity.TokenInfo;
 import com.taobao.logistics.service.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,80 +24,7 @@ import java.util.Map;
 @RequestMapping(value = "/code")
 public class RedirectController {
 
-    @Autowired
-    private AccessTokenServices accessTokenServices;
-
-    @Autowired
-    private OrderWaybillServices orderWaybillServices;
-
-
-//    private WebSocketClientManager client = WebSocketClientManager.getwebSocket();
-
-    @RequestMapping(value = "/test", produces = "text/html;charset=utf-8")
-    String index(TokenInfo tokenInfo) {
-        System.out.println("啦啦啦， 我又进来啦！！！");
-        System.out.println("tokenInfo = [" + JSONObject.toJSONString(tokenInfo) + "]");
-        log.debug("1");
-        log.error("1");
-        log.warn("1");
-        accessTokenServices.getAccessToken("111", "mday旗舰店", "32976438");
-        return "<h1>SUCCESS!</h1>" +
-                "<input type='button' style='font-size:14px color:blue' value='菜鸟组件打印' onclick=\"window.open('/code/print.html?orderId=1&waybillCode=123123123')\"/>";
-    }
-    //查询最新打印模板
-    @RequestMapping(value = "/template", produces = "text/html;charset=utf-8")
-    String template(TokenInfo tokenInfo) {
-        try {
-           return orderWaybillServices.getTemplates();
-        } catch (ApiException e) {
-            log.error("orderWaybillServices ERROR = ", e.getErrMsg());
-            e.printStackTrace();
-        }
-        return  "";
-    }
-
-    @RequestMapping(value = "/find", produces = "text/html;charset=utf-8")
-    public String getLogisticsCode(String errorDescription, @RequestParam(value = "state", defaultValue = "") String state,
-                                   @RequestParam(value = "code", defaultValue = "") String code, String key) {
-        System.out.println("errorDescription = [" + errorDescription + "], state = [" + state + "], code = [" + code + "], key = [" + key + "]");
-        boolean b = StringUtils.hasText(code);
-        System.out.println("b = " + b);
-        if (StringUtils.hasLength(state)) {
-            String[] split = state.split("_");
-            //ZTO_55156_140449_mday旗舰店_15055190645_32976438
-            TokenInfo tokenInfo = accessTokenServices.getAccessToken(code, split[3], split[5]);
-            if (null == tokenInfo) {
-                return "<h1>没有授权，请联系相关人员先授权,并<span style='color:red'>检查数据</span></h1>";
-            }
-            String accessToken = tokenInfo.getAccessToken();
-            Long taobaoUserId = tokenInfo.getTaobaoUserId();
-            if (split.length == 0) {
-                return "<h1>无法获取state 格式为： state=物流公司编号_订单ID </h1>";
-            }
-            try {
-                Integer orderId = Integer.valueOf(split[2]);
-                String waybill = orderWaybillServices.getWaybill(split[0], split[1], split[4], orderId, accessToken, taobaoUserId);
-                if (!StringUtils.hasLength(waybill)) {
-                    return "<h1>获取电子面单失败!</h1>";
-                } else if ("-1".equals(waybill)) {
-                    return "<h1>订单不存在!</h1>";
-                } else if (waybill.contains("ERROR")) {
-                    return "<h1>"+ waybill +"</h1>";
-                }
-               // String printUrl = "/code/print.html?orderId=" + orderId + "&waybill=" + waybill;
-                String printUrl="http://10.100.21.81:8005/cainiao/print3.jsp?id=" + orderId + "&tablename=M_TBRETAIL";
-                return "<meta charset=\"UTF-8\">\n" +
-                        "<h3>电子面单云打印<h2>成功!</h2> 单号:" + waybill + "</h3>\n" +
-                        "<input type='button' style='font-size:14px color:blue' value='点击准备打印' onclick=\"window.open('"+ printUrl +"')\"/>";
-            } catch (ApiException e) {
-                log.error("orderWaybillServices.getWaybill Error={} ", e.getErrMsg());
-                e.printStackTrace();
-            }
-            return "<h1>获取电子面单失败！请检查物流公司编号、订单ID</h1>";
-
-        }
-        return "<h1>无法获取code ErrorMsg:" + errorDescription + "</h1>";
-    }
+   
 
     @RequestMapping(value = "/findxsd", produces = "text/html;charset=utf-8")
     public String getLogisticsCodexsd(String errorDescription, @RequestParam(value = "state", defaultValue = "") String state,
@@ -192,22 +118,7 @@ public class RedirectController {
 
         return "OK";
     }
-
-
-    @RequestMapping(value = "/print")
-    String printWaybill(Integer OrderId, String waybillCode) {
-        System.out.println("OrderId = [" + OrderId + "], waybillCode = [" + waybillCode + "]");
-        if (null != OrderId) {
-            String sendStr = orderWaybillServices.getOrderInfo(OrderId);
-            if (StringUtils.hasLength(sendStr)) {
-//                client.sendStr(sendStr);
-                log.debug("打印完成！");
-            }
-        }
-
-        return "<h1>SUCCESS!</h1>";
-    }
-
+ 
     //转发 服务器内部
     @RequestMapping("/forward")
     public String forword(){
