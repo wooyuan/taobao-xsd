@@ -77,7 +77,7 @@ public class ServletUtils {
             return ((Number) value).intValue();
         }
         final String valueStr = toStr(value, null);
-        if (null == valueStr && "".equals(valueStr.trim()))
+        if (null == valueStr || "".equals(valueStr.trim()))
         {
             return defaultValue;
         }

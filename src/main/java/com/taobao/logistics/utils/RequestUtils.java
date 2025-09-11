@@ -23,7 +23,6 @@ public class RequestUtils {
 
 
     public static void doAsyncGet(String url) {
-        String response = "";
         OkHttpClient okHttpClient = new OkHttpClient();
         Request build = new Request.Builder()
                 .url(url)
@@ -53,7 +52,6 @@ public class RequestUtils {
      * @return
      */
     public static String doFormAsyncPost(String url, Map<String, String> map) {
-        String response = "";
         OkHttpClient okHttpClient = new OkHttpClient();
         FormBody.Builder builder = new FormBody.Builder();
         for (Map.Entry<String, String> entry :

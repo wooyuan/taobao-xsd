@@ -23,9 +23,6 @@ public class MerchantAdjust2Services {
     @Autowired
     private JdbcTemplate jdbcTemplate;
 
-    @Autowired
-    private LogisticsConfig logisticsConfig;
-
     private static final String URL = "http://gw.api.taobao.com/router/rest";
     private static final String DATE_FORMAT = "yyyyMMdd";
     private static final int MAX_RETRY = 3;
@@ -117,8 +114,8 @@ public class MerchantAdjust2Services {
         while (retryCount < MAX_RETRY) {
             try {
                 TaobaoClient client = new DefaultTaobaoClient(URL,
-                        logisticsConfig.XSDAPP_KEY,
-                        logisticsConfig.XSDAPP_SECRET);
+                        LogisticsConfig.XSDAPP_KEY,
+                        LogisticsConfig.XSDAPP_SECRET);
 
                 InventoryMerchantAdjustRequest req = new InventoryMerchantAdjustRequest();
                 InventoryMerchantAdjustRequest.InventoryCheckDto inventoryCheck =

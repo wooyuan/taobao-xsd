@@ -14,7 +14,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.BatchPreparedStatementSetter;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.datasource.SingleConnectionDataSource;
+import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 
 import java.sql.PreparedStatement;
@@ -32,8 +32,6 @@ public class SoldgetServices {
     @Autowired
     private JdbcTemplate jdbcTemplate;
 
-    @Autowired
-    private LogisticsConfig logisticsConfig;
 
     private static final String URL = "http://gw.api.taobao.com/router/rest";
 
@@ -106,7 +104,7 @@ public class SoldgetServices {
         boolean hasNext = true;
         int totalOrders = 0;
 
-        TaobaoClient client = new DefaultTaobaoClient(URL, logisticsConfig.XSDAPP_KEY, logisticsConfig.XSDAPP_SECRET);
+        TaobaoClient client = new DefaultTaobaoClient(URL, LogisticsConfig.XSDAPP_KEY, LogisticsConfig.XSDAPP_SECRET);
         String sessionKey = LogisticsConfig.SESSIONKEY;
 
         while (hasNext) {
@@ -209,17 +207,17 @@ public class SoldgetServices {
      * 批量合并订单数据到Oracle（使用MERGE INTO）
      */
     private void batchMergeOrders(List<JSONObject> orderList) {
-        StoresQueryServices service = new StoresQueryServices();
-        SingleConnectionDataSource dataSource = new SingleConnectionDataSource();
-        dataSource.setDriverClassName("oracle.jdbc.OracleDriver");
-        dataSource.setUrl("jdbc:oracle:thin:@10.100.21.151:1521/orcl");
-        dataSource.setUsername("neands3");
-        dataSource.setPassword("abc123");
+        // StoresQueryServices service = new StoresQueryServices();
+        // SingleConnectionDataSource dataSource = new SingleConnectionDataSource();
+        // dataSource.setDriverClassName("oracle.jdbc.OracleDriver");
+        // dataSource.setUrl("jdbc:oracle:thin:@10.100.21.151:1521/orcl");
+        // dataSource.setUsername("neands3");
+        // dataSource.setPassword("abc123");
         // 创建JdbcTemplate实例
-        JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+        //JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
         jdbcTemplate.batchUpdate(MERGE_ORDER_SQL, new BatchPreparedStatementSetter() {
             @Override
-            public void setValues(PreparedStatement ps, int i) throws SQLException {
+            public void setValues(@NonNull PreparedStatement ps, int i) throws SQLException {
                 JSONObject order = orderList.get(i);
                 int paramIndex = 1;
 

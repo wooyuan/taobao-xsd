@@ -14,7 +14,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.BatchPreparedStatementSetter;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.datasource.SingleConnectionDataSource;
+import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 
 import java.sql.PreparedStatement;
@@ -119,10 +119,8 @@ public class SoldIncrementGetServices {
                     "new_data.title, new_data.total_fee)";
 
     public void fetchAndSaveAllData(String startday,String endday ) throws ApiException {
-        String appkey = LogisticsConfig.XSDAPP_KEY;
-        String secret = LogisticsConfig.XSDAPP_SECRET;
         TaobaoClient client = new DefaultTaobaoClient(url, LogisticsConfig.XSDAPP_KEY, LogisticsConfig.XSDAPP_SECRET);
-        String sessionKey = "61003252b2d1f519c7c62e17ab11c588e1672a9bf76cb631757633411";
+        String sessionKey = LogisticsConfig.SESSIONKEY;
 
         long pageNo = 1L;
         boolean hasNext = true;
@@ -292,17 +290,17 @@ public class SoldIncrementGetServices {
                 }
             }
         }
-        SingleConnectionDataSource dataSource = new SingleConnectionDataSource();
-        dataSource.setDriverClassName("oracle.jdbc.OracleDriver");
-        dataSource.setUrl("jdbc:oracle:thin:@10.100.21.151:1521/orcl");
-        dataSource.setUsername("neands3");
-        dataSource.setPassword("abc123");
-        // 创建JdbcTemplate实例
-        JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
-        // 批量保存主订单
+        // SingleConnectionDataSource dataSource = new SingleConnectionDataSource();
+        // dataSource.setDriverClassName("oracle.jdbc.OracleDriver");
+        // dataSource.setUrl("jdbc:oracle:thin:@10.100.21.151:1521/orcl");
+        // dataSource.setUsername("neands3");
+        // dataSource.setPassword("abc123");
+        // // 创建JdbcTemplate实例
+        // JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+        // // 批量保存主订单
         jdbcTemplate.batchUpdate(MERGE_MAIN_ORDERS_SQL, new BatchPreparedStatementSetter() {
             @Override
-            public void setValues(PreparedStatement ps, int i) throws SQLException {
+            public void setValues(@NonNull PreparedStatement ps, int i) throws SQLException {
                 Object[] params = mainOrderBatch.get(i);
                 setMainOrderParameters(ps, params);
             }
@@ -316,7 +314,7 @@ public class SoldIncrementGetServices {
         // 批量保存子订单
         jdbcTemplate.batchUpdate(MERGE_ORDER_ITEMS_SQL, new BatchPreparedStatementSetter() {
             @Override
-            public void setValues(PreparedStatement ps, int i) throws SQLException {
+            public void setValues(@NonNull PreparedStatement ps, int i) throws SQLException {
                 Object[] params = orderItemBatch.get(i);
                 setOrderItemParameters(ps, params);
             }

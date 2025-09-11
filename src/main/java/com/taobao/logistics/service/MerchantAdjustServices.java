@@ -9,7 +9,6 @@ import com.taobao.logistics.config.LogisticsConfig;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.datasource.SingleConnectionDataSource;
 import org.springframework.stereotype.Service;
 
 import java.text.SimpleDateFormat;
@@ -24,13 +23,10 @@ public class MerchantAdjustServices {
     @Autowired
     private JdbcTemplate jdbcTemplate;
 
-    @Autowired
-    private LogisticsConfig logisticsConfig;
-
     private static final String URL = "http://gw.api.taobao.com/router/rest";
     private static final String DATE_FORMAT = "yyyyMMdd";
     private static final int MAX_RETRY = 3;
-    private static final String SESSION_KEY = LogisticsConfig.SESSIONKEY;
+
 
     public void updateInventory() {
         String querySql = "SELECT id, store_id, qty, item_id, sku_id FROM xsd_qty WHERE is_tb IS NULL";
@@ -110,8 +106,8 @@ public class MerchantAdjustServices {
         while (retryCount < MAX_RETRY) {
             try {
                 TaobaoClient client = new DefaultTaobaoClient(URL,
-                        logisticsConfig.XSDAPP_KEY,
-                        logisticsConfig.XSDAPP_SECRET);
+                        LogisticsConfig.XSDAPP_KEY,
+                        LogisticsConfig.XSDAPP_SECRET);
 
                 InventoryMerchantAdjustRequest req = new InventoryMerchantAdjustRequest();
                 InventoryMerchantAdjustRequest.InventoryCheckDto inventoryCheck =
@@ -138,7 +134,7 @@ public class MerchantAdjustServices {
 
                 // 使用配置中的sessionKey
                 InventoryMerchantAdjustResponse response = client.execute(
-                        req, SESSION_KEY);
+                        req, LogisticsConfig.SESSIONKEY);
 
                 if (response.isSuccess()) {
                     return true;

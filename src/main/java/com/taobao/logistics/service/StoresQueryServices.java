@@ -12,14 +12,13 @@ import com.taobao.logistics.config.LogisticsConfig;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.datasource.SingleConnectionDataSource;
 import org.springframework.stereotype.Service;
 
-import java.math.BigDecimal;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import org.springframework.lang.NonNull;
 
 /**
  * 淘宝小时达门店查询服务
@@ -35,16 +34,14 @@ public class StoresQueryServices {
     private static final String URL = "http://gw.api.taobao.com/router/rest";
     private static final String SESSION_KEY = LogisticsConfig.SESSIONKEY;
 
-    @Autowired
-    private LogisticsConfig logisticsConfig;
 
     /**
      * 获取所有门店数据
      * @return 包含所有门店的JSON数组
      */
     public JSONArray getAllStores() throws ApiException {
-        String appkey = logisticsConfig.XSDAPP_KEY;
-        String secret = logisticsConfig.XSDAPP_SECRET;
+        String appkey = LogisticsConfig.XSDAPP_KEY;
+        String secret = LogisticsConfig.XSDAPP_SECRET;
 
         TaobaoClient client = new DefaultTaobaoClient(URL, appkey, secret);
         List<JSONObject> allStores = new ArrayList<>();
@@ -74,6 +71,7 @@ public class StoresQueryServices {
 
             // 解析响应
             String responseBody = rsp.getBody();
+            log.info("门店数据返回"+responseBody);
             JSONObject responseJson = JSON.parseObject(responseBody);
             JSONObject result = responseJson.getJSONObject("alibaba_xsd_stores_query_response")
                     .getJSONObject("result");
@@ -121,19 +119,27 @@ public class StoresQueryServices {
      * 更新门店对应伯俊门店ID
      */
     public void updateStoresToOracle() {
-        String sql = "update   xsd_stores b set b.c_store_id= (\n" +
-                "select id from c_store@bj_70 a where a.name=b.store_name)\n" +
-                "where b.c_store_id is null" ;
+        String sql = "update xsd_stores b set b.c_store_id = (\n" +
+                "select id from c_store@bj_70 a where a.name = b.store_name and rownum = 1)\n" +
+                "where b.c_store_id is null";
 
-        SingleConnectionDataSource dataSource = new SingleConnectionDataSource();
-        dataSource.setDriverClassName("oracle.jdbc.OracleDriver");
-        dataSource.setUrl("jdbc:oracle:thin:@10.100.21.151:1521/orcl");
-        dataSource.setUsername("neands3");
-        dataSource.setPassword("abc123");
-        // 创建JdbcTemplate实例
-        JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
-        int[] updateCounts = jdbcTemplate.batchUpdate(sql);
-         }
+        // SingleConnectionDataSource dataSource = new SingleConnectionDataSource();
+        // dataSource.setDriverClassName("oracle.jdbc.OracleDriver");
+        // dataSource.setUrl("jdbc:oracle:thin:@10.100.21.181:1521/orcl");
+        // dataSource.setUsername("neands3");
+        // dataSource.setPassword("abc123");
+        
+        // // 创建JdbcTemplate实例
+        // JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+        
+        try {
+            int updateCount = jdbcTemplate.update(sql);
+            log.info("成功更新 {} 条门店的伯俊门店ID", updateCount);
+        } catch (Exception e) {
+            log.error("更新门店伯俊ID时发生异常: {}", e.getMessage(), e);
+            throw e;
+        }
+    }
     /**
      * 将门店数据保存到Oracle数据库
      */
@@ -165,13 +171,13 @@ public class StoresQueryServices {
                 "  t.status, SYSTIMESTAMP, SYSTIMESTAMP)";
 
         try {
-            SingleConnectionDataSource dataSource = new SingleConnectionDataSource();
-            dataSource.setDriverClassName("oracle.jdbc.OracleDriver");
-            dataSource.setUrl("jdbc:oracle:thin:@10.100.21.151:1521/orcl");
-            dataSource.setUsername("neands3");
-            dataSource.setPassword("abc123");
+            // SingleConnectionDataSource dataSource = new SingleConnectionDataSource();
+            // dataSource.setDriverClassName("oracle.jdbc.OracleDriver");
+            // dataSource.setUrl("jdbc:oracle:thin:@10.100.21.181:1521/orcl");
+            // dataSource.setUsername("neands3");
+            // dataSource.setPassword("abc123");
             // 创建JdbcTemplate实例
-            JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+            // JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
 //            if (jdbcTemplate == null) {
 //                log.info("JdbcTemplate is NULL!");
 //            } else {
@@ -187,7 +193,7 @@ public class StoresQueryServices {
 
             int[] updateCounts = jdbcTemplate.batchUpdate(sql, new org.springframework.jdbc.core.BatchPreparedStatementSetter() {
                 @Override
-                public void setValues(PreparedStatement ps, int i) throws SQLException {
+                public void setValues(@NonNull PreparedStatement ps, int i) throws SQLException {
                     JSONObject store = stores.getJSONObject(i);
 
                     // 添加空值检查
@@ -220,28 +226,9 @@ public class StoresQueryServices {
                     ps.setString(6, businessDay != null ? businessDay : "");
                     ps.setString(7, businessTime != null ? businessTime : "");
 
-                    // 处理可能为空的经纬度
-                    if (latStr != null && !latStr.isEmpty()) {
-                        try {
-                            ps.setBigDecimal(8, new BigDecimal(latStr));
-                        } catch (NumberFormatException e) {
-                            log.warn("纬度格式错误: {}", latStr);
-                            ps.setNull(8, java.sql.Types.DECIMAL);
-                        }
-                    } else {
-                        ps.setNull(8, java.sql.Types.DECIMAL);
-                    }
-
-                    if (lngStr != null && !lngStr.isEmpty()) {
-                        try {
-                            ps.setBigDecimal(9, new BigDecimal(lngStr));
-                        } catch (NumberFormatException e) {
-                            log.warn("经度格式错误: {}", lngStr);
-                            ps.setNull(9, java.sql.Types.DECIMAL);
-                        }
-                    } else {
-                        ps.setNull(9, java.sql.Types.DECIMAL);
-                    }
+                    // 处理经纬度 - 按照字符串格式保存
+                    ps.setString(8, latStr != null ? latStr : ""); // 纬度按字符串保存
+                    ps.setString(9, lngStr != null ? lngStr : ""); // 经度按字符串保存
 
                     ps.setString(10, contact != null ? contact : "");
                     ps.setString(11, phone != null ? phone : "");
@@ -261,48 +248,48 @@ public class StoresQueryServices {
         }
     }
 
-    /**
-     * 创建表（如果不存在）
-     */
-    private void createTableIfNotExists() {
-        try {
-            String checkTableSql = "SELECT COUNT(*) FROM user_tables WHERE table_name = 'XSD_STORES'";
-            Integer count = jdbcTemplate.queryForObject(checkTableSql, Integer.class);
+    // /**
+    //  * 创建表（如果不存在）
+    //  */
+    // private void createTableIfNotExists() {
+    //     try {
+    //         String checkTableSql = "SELECT COUNT(*) FROM user_tables WHERE table_name = 'XSD_STORES'";
+    //         Integer count = jdbcTemplate.queryForObject(checkTableSql, Integer.class);
 
-            if (count != null && count == 0) {
-                // 表不存在，创建表
-                String createTableSql = "CREATE TABLE xsd_stores (" +
-                        "id NUMBER GENERATED ALWAYS AS IDENTITY PRIMARY KEY, " +
-                        "store_id VARCHAR2(50) NOT NULL UNIQUE, " +
-                        "store_name VARCHAR2(200), " +
-                        "address VARCHAR2(500), " +
-                        "city VARCHAR2(100), " +
-                        "category_name VARCHAR2(100), " +
-                        "business_day VARCHAR2(50), " +
-                        "business_time VARCHAR2(50), " +
-                        "lat NUMBER(10, 6), " +
-                        "lng NUMBER(10, 6), " +
-                        "contact VARCHAR2(50), " +
-                        "phone VARCHAR2(50), " +
-                        "status NUMBER(2), " +
-                        "create_time TIMESTAMP DEFAULT SYSTIMESTAMP, " +
-                        "update_time TIMESTAMP DEFAULT SYSTIMESTAMP" +
-                        ")";
+    //         if (count != null && count == 0) {
+    //             // 表不存在，创建表
+    //             String createTableSql = "CREATE TABLE xsd_stores (" +
+    //                     "id NUMBER GENERATED ALWAYS AS IDENTITY PRIMARY KEY, " +
+    //                     "store_id VARCHAR2(50) NOT NULL UNIQUE, " +
+    //                     "store_name VARCHAR2(200), " +
+    //                     "address VARCHAR2(500), " +
+    //                     "city VARCHAR2(100), " +
+    //                     "category_name VARCHAR2(100), " +
+    //                     "business_day VARCHAR2(50), " +
+    //                     "business_time VARCHAR2(50), " +
+    //                     "lat VARCHAR2(100), " + // 纬度改为字符串类型
+    //                     "lng VARCHAR2(100), " + // 经度改为字符串类型
+    //                     "contact VARCHAR2(50), " +
+    //                     "phone VARCHAR2(50), " +
+    //                     "status NUMBER(2), " +
+    //                     "create_time TIMESTAMP DEFAULT SYSTIMESTAMP, " +
+    //                     "update_time TIMESTAMP DEFAULT SYSTIMESTAMP" +
+    //                     ")";
 
-                jdbcTemplate.execute(createTableSql);
+    //             jdbcTemplate.execute(createTableSql);
 
-                // 创建索引以提高查询性能
-                jdbcTemplate.execute("CREATE INDEX idx_xsd_stores_city ON xsd_stores(city)");
-                jdbcTemplate.execute("CREATE INDEX idx_xsd_stores_status ON xsd_stores(status)");
+    //             // 创建索引以提高查询性能
+    //             jdbcTemplate.execute("CREATE INDEX idx_xsd_stores_city ON xsd_stores(city)");
+    //             jdbcTemplate.execute("CREATE INDEX idx_xsd_stores_status ON xsd_stores(status)");
 
-                log.info("成功创建XSD_STORES表及相关索引");
-            }
-        } catch (Exception e) {
-            log.warn("检查或创建表时发生异常: {}", e.getMessage());
-            // 可能是权限问题或表已存在但名称大小写不同
-            // 可以尝试直接创建表，如果已存在会抛出异常
-        }
-    }
+    //             log.info("成功创建XSD_STORES表及相关索引");
+    //         }
+    //     } catch (Exception e) {
+    //         log.warn("检查或创建表时发生异常: {}", e.getMessage());
+    //         // 可能是权限问题或表已存在但名称大小写不同
+    //         // 可以尝试直接创建表，如果已存在会抛出异常
+    //     }
+    // }
 
     /**
      * 完整的门店数据获取流程

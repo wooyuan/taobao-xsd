@@ -9,10 +9,8 @@ import com.taobao.api.request.TradesSoldGetRequest;
 import com.taobao.api.response.TradesSoldGetResponse;
 import com.taobao.logistics.config.LogisticsConfig;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.jdbc.core.JdbcTemplate;
+
 import org.springframework.stereotype.Service;
-//import java.net.URISyntaxException;
 
 /**
  *
@@ -22,15 +20,12 @@ import org.springframework.stereotype.Service;
 @Slf4j
 @Service
 public class SoldQtyUpdateServices {
-    @Autowired
-    private JdbcTemplate jdbcTemplate;
-
     String url = "http://gw.api.taobao.com/router/rest";
 
     public JSONObject printjson( ) throws ApiException {
         String appkey = LogisticsConfig.XSDAPP_KEY;
         String secret = LogisticsConfig.XSDAPP_SECRET;
-        TaobaoClient client = new DefaultTaobaoClient(url, LogisticsConfig.XSDAPP_KEY, LogisticsConfig.XSDAPP_SECRET);
+        TaobaoClient client = new DefaultTaobaoClient(url, appkey, secret);
         TradesSoldGetRequest req = new TradesSoldGetRequest();
         req.setFields("tid,type,status,payment,orders,rx_audit_status");
         req.setStartCreated(StringUtils.parseDateTime("2025-08-01 00:00:00"));

@@ -39,6 +39,17 @@ user:
   password:
     # 密码错误{maxRetryCount}次锁定10分钟
     maxRetryCount: 10
+
+# 日志清理配置
+log:
+  cleanup:
+    # 日志文件保留天数，超过此天数的日志文件将被自动删除
+    retention:
+      days: 30
+    # 是否启用定时清理
+    enabled: true
+    # 定时清理的cron表达式（默认每天凌晨2点执行）
+    cron: "0 0 2 * * ?"
 hswing:
   os-name: ${os.name}
   profile: ${user.dir}${file.separator}upload${file.separator}upload

@@ -5,18 +5,13 @@ import com.taobao.api.ApiException;
 import com.taobao.api.DefaultTaobaoClient;
 import com.taobao.api.TaobaoClient;
 import com.taobao.api.request.AlibabaXsdItemQueryRequest;
-import com.taobao.api.request.AlibabaXsdItemStoreScrollQueryRequest;
 import com.taobao.api.response.AlibabaXsdItemQueryResponse;
-import com.taobao.api.response.AlibabaXsdItemStoreScrollQueryResponse;
 import com.taobao.logistics.config.LogisticsConfig;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
-//import java.net.URISyntaxException;
 
 /**
  *
@@ -26,9 +21,6 @@ import java.util.List;
 @Slf4j
 @Service
 public class ItemQueryServices {
-    @Autowired
-    private JdbcTemplate jdbcTemplate;
-
     String url = "http://gw.api.taobao.com/router/rest";
 
     public JSONObject printjson( ) throws ApiException {

@@ -13,13 +13,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.BatchPreparedStatementSetter;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.datasource.SingleConnectionDataSource;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.lang.NonNull;
 
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
-import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -165,17 +164,17 @@ public class StoreScrollQueryServices {
                 "WHEN NOT MATCHED THEN " +
                 "  INSERT (id,outer_sku_id, sku_id, outer_item_id, item_id, online_sale_flag, store_id, prepare_time, create_time, update_time) " +
                 "  VALUES (get_sequences('xsd_item_sku'),s.outer_sku_id, s.sku_id, s.outer_item_id, s.item_id, s.online_sale_flag, s.store_id, s.prepare_time, SYSTIMESTAMP, SYSTIMESTAMP)";
-        SingleConnectionDataSource dataSource = new SingleConnectionDataSource();
-        dataSource.setDriverClassName("oracle.jdbc.OracleDriver");
-        dataSource.setUrl("jdbc:oracle:thin:@10.100.21.151:1521/orcl");
-        dataSource.setUsername("neands3");
-        dataSource.setPassword("abc123");
-        // 创建JdbcTemplate实例
-        JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+        // SingleConnectionDataSource dataSource = new SingleConnectionDataSource();
+        // dataSource.setDriverClassName("oracle.jdbc.OracleDriver");
+        // dataSource.setUrl("jdbc:oracle:thin:@10.100.21.151:1521/orcl");
+        // dataSource.setUsername("neands3");
+        // dataSource.setPassword("abc123");
+        // // 创建JdbcTemplate实例
+        // JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
 
         jdbcTemplate.batchUpdate(sql, new BatchPreparedStatementSetter() {
             @Override
-            public void setValues(PreparedStatement ps, int i) throws SQLException {
+            public void setValues(@NonNull PreparedStatement ps, int i) throws SQLException {
                 ItemSku itemSku = itemSkus.get(i);
                 ps.setString(1, itemSku.getOuterSkuId());
                 ps.setString(2, itemSku.getSkuId());

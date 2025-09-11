@@ -1,14 +1,11 @@
 package com.taobao.logistics.config;
 
-import org.springframework.context.annotation.Configuration;
 import org.springframework.stereotype.Component;
 
 /**
  * Created by ShiShiDaWei on 2021/8/13.
  */
-@Configuration  // 如果这是配置类
-// 或者
-@Component      // 如果这是普通组件
+@Component
 public class LogisticsConfig {
    //电子面单
     public static final String APP_KEY = "32976438";

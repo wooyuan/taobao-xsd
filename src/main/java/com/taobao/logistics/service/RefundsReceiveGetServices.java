@@ -14,15 +14,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.BatchPreparedStatementSetter;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.datasource.SingleConnectionDataSource;
+import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Timestamp;
-import java.util.ArrayList;
-import java.util.List;
 
 @Slf4j
 @Service
@@ -95,17 +93,17 @@ public class RefundsReceiveGetServices {
                 "s.refund_phase, s.dispute_type, s.sku, s.outer_id, s.num, " +
                 "s.buyer_open_uid, s.ouid, SYSTIMESTAMP)";
 
-        SingleConnectionDataSource dataSource = new SingleConnectionDataSource();
-        dataSource.setDriverClassName("oracle.jdbc.OracleDriver");
-        dataSource.setUrl("jdbc:oracle:thin:@10.100.21.151:1521/orcl");
-        dataSource.setUsername("neands3");
-        dataSource.setPassword("abc123");
-        // 创建JdbcTemplate实例
-        JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+        // SingleConnectionDataSource dataSource = new SingleConnectionDataSource();
+        // dataSource.setDriverClassName("oracle.jdbc.OracleDriver");
+        // dataSource.setUrl("jdbc:oracle:thin:@10.100.21.151:1521/orcl");
+        // dataSource.setUsername("neands3");
+        // dataSource.setPassword("abc123");
+        // // 创建JdbcTemplate实例
+        // JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
 
         jdbcTemplate.batchUpdate(sql, new BatchPreparedStatementSetter() {
             @Override
-            public void setValues(PreparedStatement ps, int i) throws SQLException {
+            public void setValues(@NonNull PreparedStatement ps, int i) throws SQLException {
                 JSONObject refund = refundsArray.getJSONObject(i);
                 ps.setString(1, refund.getString("refund_id"));
                 ps.setString(2, refund.getString("tid"));
