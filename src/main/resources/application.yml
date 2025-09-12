@@ -32,7 +32,7 @@ logging:
   file:
 #    不生效
     path: ${user.dir}/LOG/
-    name: taobao.log
+    name: taobaoxsd.log
 
 # 用户配置
 user:

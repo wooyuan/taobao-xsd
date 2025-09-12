@@ -1,4 +1,4 @@
-package com.taobao.logistics.service;
+package com.taobao.logistics.integration.taobao.service;
 
 import com.taobao.api.ApiException;
 import com.taobao.api.DefaultTaobaoClient;

@@ -1,7 +1,7 @@
 package com.taobao.logistics.controller;
 
 import com.taobao.api.ApiException;
-import com.taobao.logistics.service.*;
+import com.taobao.logistics.integration.taobao.service.*;
 import com.taobao.logistics.utils.AjaxResult;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;

@@ -1,4 +1,4 @@
-package com.taobao.logistics.service;
+package com.taobao.logistics.integration.taobao.service;
 
 import com.alibaba.fastjson.JSONObject;
 import com.taobao.api.ApiException;
