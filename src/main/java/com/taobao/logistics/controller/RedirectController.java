@@ -1,19 +1,22 @@
 package com.taobao.logistics.controller;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.taobao.api.ApiException;
 import com.taobao.logistics.integration.taobao.service.*;
 import com.taobao.logistics.utils.AjaxResult;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.MediaType;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
-
-import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Positive;
+
+import java.net.URI;
 import java.time.*;
 import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -46,6 +49,12 @@ public class RedirectController {
     
     @Autowired
     private RefundsReceiveGetServices refundsReceiveGetServices;
+    
+    @Autowired
+    private OrderAllocationService orderAllocationService;
+    
+    @Autowired
+    private SmartOrderSplitService smartOrderSplitService;
 
     /**
      * 处理授权回调，获取物流编码
@@ -81,8 +90,8 @@ public class RedirectController {
      * 
      * @return 操作结果
      */
-    @RequestMapping(value = "/Storeadd", produces = "text/html;charset=utf-8")
-    public AjaxResult initStoreData() {
+@RequestMapping(value = "/Storeadd", method = {RequestMethod.GET, RequestMethod.POST}, produces = "application/json;charset=utf-8")
+public AjaxResult initStoreData() {
         try {
             log.info("开始初始化门店数据");
             storesQueryServices.completeStoreFetchProcess();
@@ -306,6 +315,107 @@ public class RedirectController {
         }
     }
  
+    // /**
+    //  * 智能订单分配接口
+    //  * 
+    //  * @param orderId 订单ID
+    //  * @return HTML格式的分配结果
+    //  */
+    // @GetMapping(value = "/orderAllocation", produces = MediaType.TEXT_HTML_VALUE + ";charset=utf-8")
+    // public String smartOrderAllocation(@RequestParam("orderId") Long orderId) {
+    //     try {
+    //         log.info("开始进行订单智能分配，订单ID: {}", orderId);
+            
+    //         if (orderId == null || orderId <= 0) {
+    //             return generateErrorHtml("订单ID无效", orderId);
+    //         }
+            
+    //         String result = orderAllocationService.smartOrderAllocation(orderId);
+            
+    //         log.info("订单分配完成，订单ID: {}", orderId);
+    //         return result;
+            
+    //     } catch (Exception e) {
+    //         log.error("订单分配失败，订单ID: {}", orderId, e);
+    //         return generateErrorHtml("系统异常: " + e.getMessage(), orderId);
+    //     }
+    // }
+
+
+      /**
+     * 智能订单分配接口
+     * 
+     * @param orderId 订单ID
+     * @return HTML格式的分配结果
+     */
+    @GetMapping(value = "/orderAllocation", produces = MediaType.TEXT_HTML_VALUE + ";charset=utf-8")
+    public String smartOrderAllocation(@RequestParam("orderId") Long orderId) {
+        try {
+            log.info("开始进行订单智能分配，订单ID: {}", orderId);
+            
+            if (orderId == null || orderId <= 0) {
+                return generateErrorHtml("订单ID无效", orderId);
+            }
+            
+            String result = orderAllocationService.smartOrderAllocation(orderId);
+            
+            log.info("订单分配完成，订单ID: {}", orderId);
+            return result;
+            
+        } catch (Exception e) {
+            log.error("订单分配失败，订单ID: {}", orderId, e);
+            return generateErrorHtml("系统异常: " + e.getMessage(), orderId);
+        }
+    }
+    
+    /**
+     * 智能递进式拆单分配接口
+     * 实现您要求的递进式拆单逻辑：
+     * - 三行明细ABC：ABC → (A,BC)|(AB,C) → (A,B,C)
+     * - 四行明细ABCD：ABCD → (A,BCD)|(B,ACD)|(C,ABD)|(D,ABC)|(AB,CD)|(AC,BD)|(AD,BC) → ... → (A,B,C,D)
+     * - 按拆分规则最少的原则排序显示
+     * 
+     * @param orderId 订单ID
+     * @return HTML格式的递进式拆单分配结果
+     */
+    @GetMapping(value = "/smartSplit", produces = MediaType.TEXT_HTML_VALUE + ";charset=utf-8")
+    @ResponseBody
+    public String smartProgressiveSplitAllocation(@RequestParam("orderId") Long orderId) {
+        try {
+            log.info("开始进行智能递进式拆单分配，订单ID: {}", orderId);
+            
+            if (orderId == null || orderId <= 0) {
+                return generateErrorHtml("订单ID无效", orderId);
+            }
+            
+            String result = smartOrderSplitService.smartProgressiveSplitAllocation(orderId);
+            
+            log.info("智能递进式拆单分配完成，订单ID: {}", orderId);
+            return result;
+            
+        } catch (Exception e) {
+            log.error("智能递进式拆单分配失败，订单ID: {}", orderId, e);
+            return generateErrorHtml("系统异常: " + e.getMessage(), orderId);
+        }
+    }
+    
+    
+    /**
+     * 生成错误页面HTML
+     */
+    private String generateErrorHtml(String errorMessage, Long orderId) {
+        StringBuilder html = new StringBuilder();
+        html.append("<!DOCTYPE html><html><head><meta charset='UTF-8'>")
+            .append("<title>订单分配结果</title>")
+            .append("<style>body{font-family:Arial,sans-serif;margin:20px;}")
+            .append(".error{color:red;background:#ffe6e6;padding:10px;border:1px solid #ff0000;}</style>")
+            .append("</head><body>")
+            .append("<h2>订单分配结果 - 订单ID: ").append(orderId != null ? orderId : "无效").append("</h2>")
+            .append("<div class='error'>错误: ").append(errorMessage).append("</div>")
+            .append("</body></html>");
+        return html.toString();
+    }
+
     /**
      * 转发到淘宝首页（服务器内部转发）
      * 
@@ -327,6 +437,7 @@ public class RedirectController {
         log.info("执行浏览器重定向到淘宝首页");
         return "redirect:/index_taobao";
     }
+    
 
     /**
      * 测试方法（仅用于开发调试）
