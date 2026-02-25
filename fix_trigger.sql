@@ -1,4 +1,4 @@
--- 修复Oracle触发器无效问题：重新创建系统时间轴触发器
+-- 修复Oracle触发器无效问题：重新创建系统时间轴触发器修改测试
 CREATE OR REPLACE TRIGGER SYSTEM_TIMELINE_TRIG
 BEFORE INSERT OR UPDATE ON SYSTEM_TIMELINE
 FOR EACH ROW
