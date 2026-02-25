@@ -1,0 +1,2266 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <title>系统信息管理</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/static/layui/css/layui.css">
+    <style>
+        :root {
+            --primary-color: #1A7AF8;
+            --primary-hover: #409EFF;
+            --success-color: #67C23A;
+            --warning-color: #E6A23C;
+            --danger-color: #F56C6C;
+            --info-color: #909399;
+            --bg-primary: #F2F3F5;
+            --bg-secondary: #FFFFFF;
+            --bg-hover: #F5F7FA;
+            --text-primary: #303133;
+            --text-secondary: #606266;
+            --text-placeholder: #C0C4CC;
+            --border-color: #E4E7ED;
+            --border-light: #EBEEF5;
+            --border-lighter: #F2F6FC;
+            --shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+            --shadow-lighter: 0 2px 4px rgba(0, 0, 0, 0.12);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Helvetica Neue", Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 24px;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+
+        .app-container {
+            max-width: 1600px;
+            margin: 0 auto;
+            display: flex;
+            gap: 24px;
+            min-height: calc(100vh - 48px);
+        }
+
+        /* 侧边栏 */
+        .sidebar {
+            width: 280px;
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .sidebar-card {
+            background: var(--bg-secondary);
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: var(--shadow-lighter);
+            border: 1px solid var(--border-light);
+        }
+
+        .sidebar-card h3 {
+            margin: 0 0 16px 0;
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .search-box {
+            position: relative;
+            margin-bottom: 16px;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 12px 16px 12px 40px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(26, 122, 248, 0.2);
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-placeholder);
+        }
+
+        .filter-group {
+            margin-bottom: 16px;
+        }
+
+        .filter-label {
+            display: block;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+
+        .filter-select {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 14px;
+            background: white;
+        }
+
+        /* 主内容区域 */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        /* 顶部导航栏 */
+        .top-bar {
+            background: var(--bg-secondary);
+            border-radius: 8px;
+            padding: 20px 24px;
+            box-shadow: var(--shadow-lighter);
+            border: 1px solid var(--border-light);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .page-title {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 12px;
+        }
+
+        /* 按钮样式 */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10px 20px;
+            border: 1px solid transparent;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+            white-space: nowrap;
+            min-height: 36px;
+        }
+
+        .btn:focus {
+            outline: none;
+        }
+
+        .btn-primary {
+            background: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-hover);
+            border-color: var(--primary-hover);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(26, 122, 248, 0.3);
+        }
+
+        .btn-success {
+            background: var(--success-color);
+            color: white;
+            border-color: var(--success-color);
+        }
+
+        .btn-success:hover {
+            background: #5daf34;
+            border-color: #5daf34;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(103, 194, 58, 0.3);
+        }
+
+        .btn-secondary {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            border-color: var(--border-color);
+        }
+
+        .btn-secondary:hover {
+            background: var(--bg-hover);
+            border-color: var(--text-placeholder);
+        }
+
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 12px;
+            min-height: 28px;
+        }
+
+        .btn-icon {
+            padding: 8px;
+            min-width: 32px;
+            width: 32px;
+            height: 32px;
+        }
+
+        .btn-ghost {
+            background: transparent;
+            color: var(--text-secondary);
+            border-color: transparent;
+        }
+
+        .btn-ghost:hover {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+        }
+
+        .btn-danger {
+            background: var(--danger-color);
+            color: white;
+            border-color: var(--danger-color);
+        }
+
+        .btn-danger:hover {
+            background: #f78989;
+            border-color: #f78989;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(245, 108, 108, 0.3);
+        }
+
+        /* 批量操作栏 */
+        .batch-actions {
+            background: var(--bg-primary);
+            border-bottom: 1px solid var(--border-light);
+            padding: 12px 24px;
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .batch-actions.show {
+            display: flex;
+        }
+
+        .batch-info {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .batch-buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        /* 卡片视图 */
+        .card-view {
+            display: none;
+            padding: 24px;
+        }
+
+        .card-view.active {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 20px;
+        }
+
+        .system-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-light);
+            border-radius: 8px;
+            padding: 20px;
+            transition: all 0.2s;
+            position: relative;
+            cursor: pointer;
+        }
+
+        .system-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow);
+            border-color: var(--primary-color);
+        }
+
+        .system-card.selected {
+            border-color: var(--primary-color);
+            background: rgba(26, 122, 248, 0.05);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 16px;
+        }
+
+        .card-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin: 0;
+            flex: 1;
+        }
+
+        .card-actions {
+            display: flex;
+            gap: 4px;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .system-card:hover .card-actions {
+            opacity: 1;
+        }
+
+        .card-content {
+            color: var(--text-secondary);
+            line-height: 1.6;
+            margin-bottom: 16px;
+        }
+
+        .card-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .meta-item {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .meta-label {
+            font-weight: 500;
+            margin-right: 4px;
+        }
+
+        .card-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 12px;
+            border-top: 1px solid var(--border-lighter);
+        }
+
+        /* 详情模态框 */
+        .detail-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 2500;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(4px);
+        }
+
+        .detail-modal.show {
+            display: flex;
+        }
+
+        .detail-content {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            width: 90%;
+            max-width: 800px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: var(--shadow);
+        }
+
+        .detail-header {
+            padding: 24px;
+            border-bottom: 1px solid var(--border-lighter);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .detail-body {
+            padding: 24px;
+        }
+
+        .detail-section {
+            margin-bottom: 24px;
+        }
+
+        .detail-section:last-child {
+            margin-bottom: 0;
+        }
+
+        .detail-section-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 12px;
+        }
+
+        .detail-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+        }
+
+        .detail-item {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .detail-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .detail-value {
+            font-size: 14px;
+            color: var(--text-primary);
+        }
+
+        /* 统计图表 */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .stat-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-light);
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .stat-trend {
+            font-size: 12px;
+            margin-top: 4px;
+        }
+
+        .trend-up {
+            color: var(--success-color);
+        }
+
+        .trend-down {
+            color: var(--danger-color);
+        }
+
+        /* 加载动画 */
+        .loading {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid var(--border-color);
+            border-radius: 50%;
+            border-top-color: var(--primary-color);
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* 选择框样式 */
+        .select-checkbox {
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+        }
+
+        /* 高级搜索 */
+        .advanced-search {
+            display: none;
+            background: var(--bg-primary);
+            border-radius: 8px;
+            padding: 16px;
+            margin-top: 16px;
+        }
+
+        .advanced-search.show {
+            display: block;
+        }
+
+        .search-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .search-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .search-actions {
+            display: flex;
+            gap: 8px;
+            justify-content: flex-end;
+        }
+
+        /* 空状态 */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-secondary);
+        }
+
+        .empty-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+
+        .empty-text {
+            font-size: 16px;
+            font-weight: 500;
+            margin-bottom: 8px;
+        }
+
+        .empty-description {
+            font-size: 14px;
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .app-container {
+                flex-direction: column;
+            }
+
+            .sidebar {
+                width: 100%;
+                order: 2;
+            }
+
+            .main-content {
+                order: 1;
+            }
+
+            .top-bar {
+                flex-direction: column;
+                gap: 16px;
+                align-items: stretch;
+            }
+
+            .action-buttons {
+                justify-content: center;
+            }
+
+            .card-view.active {
+                grid-template-columns: 1fr;
+            }
+
+            .detail-content {
+                width: 95%;
+                margin: 20px;
+            }
+
+            .detail-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* 内容卡片 */
+        .content-card {
+            background: var(--bg-secondary);
+            border-radius: 8px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border-light);
+            overflow: hidden;
+        }
+
+        .card-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border-lighter);
+            background: var(--bg-secondary);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .card-title {
+            margin: 0;
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .card-body {
+            padding: 0;
+        }
+
+        /* 表格样式 */
+        .table-container {
+            overflow-x: auto;
+        }
+
+        .system-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+
+        .system-table th,
+        .system-table td {
+            padding: 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-lighter);
+            vertical-align: top;
+        }
+
+        .system-table th {
+            background: var(--bg-primary);
+            font-weight: 600;
+            color: var(--text-primary);
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .system-table tbody tr {
+            transition: all 0.2s;
+        }
+
+        .system-table tbody tr:hover {
+            background: var(--bg-hover);
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .system-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        /* 状态标签 */
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .status-success {
+            background: rgba(103, 194, 58, 0.1);
+            color: var(--success-color);
+        }
+
+        .status-warning {
+            background: rgba(230, 162, 60, 0.1);
+            color: var(--warning-color);
+        }
+
+        .status-info {
+            background: rgba(144, 147, 153, 0.1);
+            color: var(--info-color);
+        }
+
+        /* 闲置功能编辑区域 */
+        .idle-functions-container {
+            max-width: 320px;
+        }
+
+        .idle-functions-view {
+            position: relative;
+        }
+
+        .idle-functions-view span {
+            display: block;
+            line-height: 1.5;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+            word-break: break-word;
+        }
+
+        .idle-functions-edit {
+            display: none;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .idle-functions-edit.active {
+            display: flex;
+        }
+
+        .idle-functions-edit textarea {
+            width: 100%;
+            min-height: 80px;
+            padding: 8px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 14px;
+            font-family: inherit;
+            resize: vertical;
+            transition: border-color 0.2s;
+        }
+
+        .idle-functions-edit textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(26, 122, 248, 0.2);
+        }
+
+        .edit-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        /* 操作按钮组 */
+        .action-group {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        /* 导入表单模态框 */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(4px);
+        }
+
+        .modal {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            width: 480px;
+            max-width: 90vw;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border-light);
+        }
+
+        .modal-header {
+            padding: 24px;
+            border-bottom: 1px solid var(--border-lighter);
+        }
+
+        .modal-title {
+            margin: 0;
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .modal-body {
+            padding: 24px;
+        }
+
+        .modal-footer {
+            padding: 16px 24px;
+            border-top: 1px solid var(--border-lighter);
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(26, 122, 248, 0.2);
+        }
+
+        .form-help {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: 4px;
+            line-height: 1.4;
+        }
+
+        /* 分页样式 */
+        .pagination-container {
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 16px;
+            background: var(--bg-secondary);
+            border-top: 1px solid var(--border-lighter);
+        }
+
+        .pagination-info {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .pagination {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .pagination button {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 8px 12px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            cursor: pointer;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s;
+            min-width: 36px;
+            height: 36px;
+        }
+
+        .pagination button:hover:not(:disabled) {
+            background: var(--bg-hover);
+            border-color: var(--primary-color);
+            color: var(--primary-color);
+        }
+
+        .pagination button.active {
+            background: var(--primary-color);
+            border-color: var(--primary-color);
+            color: white;
+        }
+
+        .pagination button:disabled {
+            background: var(--bg-primary);
+            color: var(--text-placeholder);
+            cursor: not-allowed;
+            border-color: var(--border-color);
+        }
+
+        /* 加载状态 */
+        .loading {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid var(--border-color);
+            border-radius: 50%;
+            border-top-color: var(--primary-color);
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* 空状态 */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-secondary);
+        }
+
+        .empty-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+
+        .empty-text {
+            font-size: 16px;
+            margin-bottom: 8px;
+        }
+
+        .empty-description {
+            font-size: 14px;
+            opacity: 0.8;
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 1200px) {
+            .app-container {
+                flex-direction: column;
+            }
+            
+            .sidebar {
+                width: 100%;
+                order: -1;
+            }
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 16px;
+            }
+            
+            .top-bar {
+                flex-direction: column;
+                gap: 16px;
+                align-items: stretch;
+            }
+            
+            .action-buttons {
+                justify-content: center;
+            }
+            
+            .card-header {
+                padding: 16px 20px;
+            }
+            
+            .system-table th,
+            .system-table td {
+                padding: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- 侧边栏 -->
+        <div class="sidebar">
+            <div class="sidebar-card">
+                <h3>搜索与筛选</h3>
+                <div class="search-box">
+                    <span class="search-icon">🔍</span>
+                    <input type="text" class="search-input" placeholder="搜索系统名称、功能描述..." id="searchInput">
+                </div>
+                
+                <div class="filter-group">
+                    <label class="filter-label">是否使用</label>
+                    <select class="filter-select" id="filterIsUsing">
+                        <option value="">全部</option>
+                        <option value="是">是</option>
+                        <option value="否">否</option>
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label class="filter-label">来源</label>
+                    <select class="filter-select" id="filterSource">
+                        <option value="">全部</option>
+                        <option value="内部开发">内部开发</option>
+                        <option value="外部采购">外部采购</option>
+                        <option value="第三方">第三方</option>
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label class="filter-label">类型</label>
+                    <select class="filter-select" id="filterType">
+                        <option value="">全部</option>
+                        <option value="管理系统">管理系统</option>
+                        <option value="业务系统">业务系统</option>
+                        <option value="接口服务">接口服务</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="sidebar-card">
+                <h3>统计信息</h3>
+                <div style="display: flex; flex-direction: column; gap: 12px;">
+                    <div style="padding: 12px; background: var(--bg-primary); border-radius: 6px;">
+                        <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 4px;">总系统数</div>
+                        <div style="font-size: 18px; font-weight: 600; color: var(--text-primary);" id="totalCount">0</div>
+                    </div>
+                    <div style="padding: 12px; background: rgba(103, 194, 58, 0.1); border-radius: 6px;">
+                        <div style="font-size: 12px; color: var(--success-color); margin-bottom: 4px;">使用中</div>
+                        <div style="font-size: 18px; font-weight: 600; color: var(--success-color);" id="usingCount">0</div>
+                    </div>
+                    <div style="padding: 12px; background: rgba(230, 162, 60, 0.1); border-radius: 6px;">
+                        <div style="font-size: 12px; color: var(--warning-color); margin-bottom: 4px;">闲置中</div>
+                        <div style="font-size: 18px; font-weight: 600; color: var(--warning-color);" id="idleCount">0</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 主内容区域 -->
+        <div class="main-content">
+            <!-- 顶部导航栏 -->
+            <div class="top-bar">
+                <h1 class="page-title">系统信息管理</h1>
+                <div class="action-buttons">
+                    <button class="btn btn-secondary" onclick="refreshData()">
+                        <span style="margin-right: 8px;">🔄</span>
+                        刷新
+                    </button>
+                    <button class="btn btn-primary" onclick="openImportForm()">
+                        <span style="margin-right: 8px;">📤</span>
+                        导入系统信息
+                    </button>
+                </div>
+            </div>
+
+            <!-- 内容卡片 -->
+            <div class="content-card">
+                <div class="card-header">
+                    <h2 class="card-title">系统信息列表</h2>
+                    <div class="action-group">
+                        <button class="btn btn-sm btn-ghost" onclick="toggleStatsView()">
+                            <span style="margin-right: 4px;">📊</span>
+                            <span id="statsToggleText">统计视图</span>
+                        </button>
+                        <button class="btn btn-sm btn-secondary" onclick="exportData()">
+                            <span style="margin-right: 4px;">💾</span>
+                            导出
+                        </button>
+                        <button class="btn btn-sm btn-secondary" onclick="toggleView()">
+                            <span style="margin-right: 4px;">📋</span>
+                            <span id="viewToggleText">列表视图</span>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- 批量操作栏 -->
+                    <div id="batchActions" class="batch-actions">
+                        <div class="batch-info">
+                            已选择 <span id="selectedCount">0</span> 项
+                        </div>
+                        <div class="batch-buttons">
+                            <button class="btn btn-sm btn-secondary" onclick="exportSelected()">
+                                📤 导出选中
+                            </button>
+                            <button class="btn btn-sm btn-danger" onclick="deleteSelected()">
+                                🗑️ 删除选中
+                            </button>
+                            <button class="btn btn-sm btn-ghost" onclick="cancelSelection()">
+                                ❌ 取消选择
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="card-body">
+                        <!-- 统计信息卡片 -->
+                        <div id="statsGrid" class="stats-grid" style="display: none;">
+                            <div class="stat-card">
+                                <div class="stat-value" id="totalSystems">0</div>
+                                <div class="stat-label">总系统数</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-value" id="usingSystems">0</div>
+                                <div class="stat-label">使用中</div>
+                                <div class="stat-trend trend-up" id="usingTrend">+0%</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-value" id="idleSystems">0</div>
+                                <div class="stat-label">闲置中</div>
+                                <div class="stat-trend trend-down" id="idleTrend">+0%</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-value" id="promoteSystems">0</div>
+                                <div class="stat-label">可推广</div>
+                                <div class="stat-trend trend-up" id="promoteTrend">+0%</div>
+                            </div>
+                        </div>
+
+                        <!-- 高级搜索 -->
+                        <div id="advancedSearch" class="advanced-search">
+                            <div class="search-row">
+                                <div>
+                                    <label class="filter-label">创建时间范围</label>
+                                    <div style="display: flex; gap: 8px;">
+                                        <input type="date" class="search-input" id="searchStartDate" style="flex: 1;">
+                                        <span style="align-self: center; color: var(--text-secondary);">至</span>
+                                        <input type="date" class="search-input" id="searchEndDate" style="flex: 1;">
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="filter-label">更新时间范围</label>
+                                    <div style="display: flex; gap: 8px;">
+                                        <input type="date" class="search-input" id="updateStartDate" style="flex: 1;">
+                                        <span style="align-self: center; color: var(--text-secondary);">至</span>
+                                        <input type="date" class="search-input" id="updateEndDate" style="flex: 1;">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="search-row">
+                                <div>
+                                    <label class="filter-label">关键词标签</label>
+                                    <input type="text" class="search-input" id="searchTags" placeholder="多个标签用逗号分隔">
+                                </div>
+                                <div>
+                                    <label class="filter-label">备注信息</label>
+                                    <input type="text" class="search-input" id="searchRemarks" placeholder="搜索备注内容">
+                                </div>
+                            </div>
+                            <div class="search-actions">
+                                <button class="btn btn-sm btn-ghost" onclick="clearAdvancedSearch()">清除</button>
+                                <button class="btn btn-sm btn-primary" onclick="applyAdvancedSearch()">应用搜索</button>
+                            </div>
+                        </div>
+
+                        <!-- 表格视图 -->
+                        <div id="tableView" class="table-view">
+                            <div class="table-container">
+                                <table class="system-table">
+                                    <thead>
+                                        <tr>
+                                            <th>
+                                                <input type="checkbox" class="select-checkbox" id="selectAll" onchange="toggleSelectAll()">
+                                            </th>
+                                            <th>系统/接口名称</th>
+                                            <th>功能简介</th>
+                                            <th>责任人</th>
+                                            <th>来源</th>
+                                            <th>类型</th>
+                                            <th>使用状态</th>
+                                            <th>推广状态</th>
+                                            <th>闲置功能盘点</th>
+                                            <th>操作</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="systemTableBody">
+                                        <!-- 数据将通过JavaScript动态加载 -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- 卡片视图 -->
+                        <div id="cardView" class="card-view">
+                            <!-- 卡片数据将通过JavaScript动态加载 -->
+                        </div>
+                        
+                        <!-- 空状态 -->
+                        <div id="emptyState" class="empty-state" style="display: none;">
+                            <div class="empty-icon">📊</div>
+                            <div class="empty-text">暂无系统信息</div>
+                            <div class="empty-description">点击"导入系统信息"开始添加数据</div>
+                        </div>
+                    </div>
+                
+                <!-- 分页容器 -->
+                <div id="paginationContainer" class="pagination-container"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 导入表单模态框 -->
+    <div class="modal-overlay" id="importModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title">导入系统信息</h3>
+                <button class="btn btn-icon btn-secondary" onclick="closeImportForm()" style="position: absolute; right: 20px; top: 20px;">
+                    ✕
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="importForm" enctype="multipart/form-data">
+                    <div class="form-group">
+                        <label for="importFile" class="form-label">选择文件</label>
+                        <input type="file" id="importFile" name="file" accept=".csv,.xls,.xlsx" class="form-input" required>
+                        <div class="form-help">
+                            支持CSV、Excel格式（.csv, .xls, .xlsx）<br>
+                            第一行为表头：系统/接口名称,功能简介,责任人,来源,类型,是否使用,是否可以推广到事业部,闲置功能盘点
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeImportForm()">取消</button>
+                <button type="submit" class="btn btn-primary" form="importForm">导入</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 详情模态框 -->
+    <div class="detail-modal" id="detailModal">
+        <div class="detail-content">
+            <div class="detail-header">
+                <h3 class="detail-title" id="detailTitle">系统详情</h3>
+                <button class="btn btn-icon btn-ghost" onclick="closeDetailModal()" style="position: absolute; right: 24px; top: 24px;">
+                    ✕
+                </button>
+            </div>
+            <div class="detail-body" id="detailBody">
+                <!-- 详情内容将通过JavaScript动态加载 -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 页面加载完成后渲染系统信息列表
+        document.addEventListener('DOMContentLoaded', function() {
+            fetchSystemInfoList();
+            setupEventListeners();
+        });
+
+        // 分页相关变量
+        let currentPage = 1; // 当前页码
+        let pageSize = 10; // 每页显示条数
+        let totalCount = 0; // 总记录数
+        let totalPages = 0; // 总页数
+        let systemInfoList = []; // 完整数据列表
+        let filteredList = []; // 筛选后的数据列表
+        let currentView = 'table'; // 当前视图模式
+        let showStats = false; // 是否显示统计视图
+        let selectedItems = new Set(); // 选中的项目ID
+        let currentDetailItem = null; // 当前查看详情的项目
+
+        // 设置事件监听器
+        function setupEventListeners() {
+            // 搜索功能
+            const searchInput = document.getElementById('searchInput');
+            searchInput.addEventListener('input', debounce(applyFilters, 300));
+
+            // 筛选功能
+            const filterIsUsing = document.getElementById('filterIsUsing');
+            const filterSource = document.getElementById('filterSource');
+            const filterType = document.getElementById('filterType');
+            
+            filterIsUsing.addEventListener('change', applyFilters);
+            filterSource.addEventListener('change', applyFilters);
+            filterType.addEventListener('change', applyFilters);
+
+            // 导入表单提交
+            const importForm = document.getElementById('importForm');
+            importForm.addEventListener('submit', handleImport);
+        }
+
+        // 防抖函数
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+
+        // 获取系统信息列表
+        function fetchSystemInfoList(page = 1) {
+            showLoading();
+            const url = `/api/systemInfo/listByPage?current=${page}&size=${pageSize}`;
+            
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.code === 0) {
+                        const pageResult = data.data;
+                        currentPage = pageResult.current;
+                        totalCount = pageResult.total;
+                        totalPages = pageResult.pages;
+                        
+                        // 更新数据
+                        systemInfoList = pageResult.records;
+                        filteredList = [...systemInfoList]; // 初始化筛选列表
+                        
+                        updateStatistics();
+                        renderCurrentPage();
+                        renderPagination();
+                        showEmptyState();
+                    }
+                })
+                .catch(error => {
+                    console.error('获取系统信息列表失败:', error);
+                    showError('获取数据失败，请刷新重试');
+                })
+                .finally(() => {
+                    hideLoading();
+                });
+        }
+
+        // 更新统计信息
+        function updateStatistics() {
+            const usingCount = systemInfoList.filter(item => item.isUsing === '是').length;
+            const idleCount = systemInfoList.filter(item => item.isUsing === '否').length;
+            
+            document.getElementById('totalCount').textContent = systemInfoList.length;
+            document.getElementById('usingCount').textContent = usingCount;
+            document.getElementById('idleCount').textContent = idleCount;
+        }
+
+        // 应用筛选条件 - 使用服务器端分页
+        function applyFilters() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const filterIsUsing = document.getElementById('filterIsUsing').value;
+            const filterSource = document.getElementById('filterSource').value;
+            const filterType = document.getElementById('filterType').value;
+            
+            // 保存筛选条件到全局变量
+            window.currentFilters = {
+                searchTerm,
+                filterIsUsing,
+                filterSource,
+                filterType
+            };
+            
+            // 重新从第一页开始查询
+            currentPage = 1;
+            fetchSystemInfoWithFilters();
+        }
+        
+        // 获取带筛选的系统信息列表
+        function fetchSystemInfoWithFilters(page = 1) {
+            showLoading();
+            
+            const url = `/api/systemInfo/listByPage?current=${page}&size=${pageSize}`;
+            
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.code === 0) {
+                        const pageResult = data.data;
+                        currentPage = pageResult.current;
+                        totalCount = pageResult.total;
+                        totalPages = pageResult.pages;
+                        
+                        // 更新数据 - 应用客户端筛选
+                        const allRecords = pageResult.records;
+                        const filters = window.currentFilters || {};
+                        
+                        if (!filters.searchTerm && !filters.filterIsUsing && !filters.filterSource && !filters.filterType) {
+                            // 没有筛选条件
+                            filteredList = [...allRecords];
+                        } else {
+                            // 应用客户端筛选
+                            filteredList = allRecords.filter(item => {
+                                // 搜索条件
+                                const matchesSearch = !filters.searchTerm || 
+                                    item.systemName.toLowerCase().includes(filters.searchTerm) ||
+                                    item.functionDesc.toLowerCase().includes(filters.searchTerm) ||
+                                    item.responsiblePerson.toLowerCase().includes(filters.searchTerm);
+
+                                // 筛选条件
+                                const matchesIsUsing = !filters.filterIsUsing || item.isUsing === filters.filterIsUsing;
+                                const matchesSource = !filters.filterSource || item.source === filters.filterSource;
+                                const matchesType = !filters.filterType || item.type === filters.filterType;
+
+                                return matchesSearch && matchesIsUsing && matchesSource && matchesType;
+                            });
+                        }
+                        
+                        // 更新统计数据
+                        updateStatistics();
+                        renderCurrentPage();
+                        renderPagination();
+                        showEmptyState();
+                    }
+                })
+                .catch(error => {
+                    console.error('获取系统信息列表失败:', error);
+                    showError('获取数据失败，请刷新重试');
+                })
+                .finally(() => {
+                    hideLoading();
+                });
+        }
+
+        // 显示/隐藏空状态
+        function showEmptyState() {
+            const emptyState = document.getElementById('emptyState');
+            const tableBody = document.getElementById('systemTableBody');
+            
+            if (filteredList.length === 0) {
+                emptyState.style.display = 'block';
+                tableBody.style.display = 'none';
+            } else {
+                emptyState.style.display = 'none';
+                tableBody.style.display = 'table-row-group';
+            }
+        }
+
+        // 渲染当前页数据
+        function renderCurrentPage() {
+            // 直接使用filteredList渲染数据，因为服务器已经返回了当前页的数据
+            renderSystemInfoList(filteredList);
+        }
+
+        // 渲染系统信息列表
+        function renderSystemInfoList(systemInfoList) {
+            const tbody = document.getElementById('systemTableBody');
+            let html = '';
+            
+            if (systemInfoList.length === 0) {
+                tbody.innerHTML = '';
+                return;
+            }
+
+            systemInfoList.forEach(item => {
+                // 状态标签 - 适配接口返回的"在线"/"下线"状态
+                const usingStatus = item.isUsing === '在线' ? 
+                    '<span class="status-badge status-success">使用中</span>' : 
+                    '<span class="status-badge status-warning">闲置中</span>';
+                
+                // 推广状态 - 适配接口返回的"按需"/"否"状态
+                const promoteStatus = item.canPromote === '是' || item.canPromote === '按需' ? 
+                    '<span class="status-badge status-success">可推广</span>' : 
+                    '<span class="status-badge status-info">不可推广</span>';
+                
+
+                const isSelected = selectedItems.has(item.id);
+
+                html += `
+                    <tr>
+                        <td>
+                            <input type="checkbox" class="select-checkbox" ${isSelected ? 'checked' : ''} onchange="toggleSelectItem(${item.id})">
+                        </td>
+                        <td>
+                            <div style="font-weight: 600; color: var(--text-primary);">${item.systemName}</div>
+                        </td>
+                        <td>
+                            <div style="color: var(--text-secondary); line-height: 1.5;">${item.functionDesc}</div>
+                        </td>
+                        <td>
+                            <div style="color: var(--text-secondary);">${item.responsiblePerson}</div>
+                        </td>
+                        <td>
+                            <div style="color: var(--text-secondary);">${item.source}</div>
+                        </td>
+                        <td>
+                            <div style="color: var(--text-secondary);">${item.type}</div>
+                        </td>
+                        <td>${usingStatus}</td>
+                        <td>${promoteStatus}</td>
+                        <td>
+                            <div class="idle-functions-container" data-id="${item.id}">
+                                <div class="idle-functions-view">
+                                    <span>${item.idleFunctions || '<span style="color: var(--text-placeholder);">暂无描述</span>'}</span>
+                                    <button class="btn btn-sm btn-secondary" onclick="editIdleFunctions(${item.id})" style="margin-top: 8px;">
+                                        ✏️ 编辑
+                                    </button>
+                                </div>
+                                <div class="idle-functions-edit">
+                                    <textarea rows="3" id="idleFunctions_${item.id}" placeholder="请输入闲置功能描述...">${item.idleFunctions || ''}</textarea>
+                                    <div class="edit-actions">
+                                        <button class="btn btn-sm btn-success" onclick="saveIdleFunctions(${item.id})">
+                                            💾 保存
+                                        </button>
+                                        <button class="btn btn-sm btn-secondary" onclick="cancelEditIdleFunctions(${item.id})">
+                                            ❌ 取消
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="action-group">
+                                <button class="btn btn-sm btn-secondary" onclick="viewSystemInfo(${item.id})" title="查看详情">
+                                    👁️
+                                </button>
+                                <button class="btn btn-sm btn-danger" onclick="deleteSystemInfo(${item.id})" title="删除">
+                                    🗑️
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            });
+            
+            tbody.innerHTML = html;
+        }
+        
+        // 渲染分页
+        function renderPagination() {
+            const paginationContainer = document.getElementById('paginationContainer');
+            
+            if (totalPages <= 1) {
+                paginationContainer.innerHTML = '';
+                return;
+            }
+            
+            // 分页信息
+            const paginationInfo = `
+                <div class="pagination-info">
+                    共 ${totalCount} 条记录，第 ${currentPage} 页 / 共 ${totalPages} 页
+                </div>
+            `;
+            
+            // 分页按钮
+            let paginationHtml = '<ul class="pagination">';
+            
+            // 首页按钮
+            paginationHtml += `<li><button onclick="goToPage(1)" ${currentPage === 1 ? 'disabled' : ''}>首页</button></li>`;
+            
+            // 上一页按钮
+            paginationHtml += `<li><button onclick="goToPage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>上一页</button></li>`;
+            
+            // 页码按钮
+            const startPage = Math.max(1, currentPage - 2);
+            const endPage = Math.min(totalPages, currentPage + 2);
+            
+            for (let i = startPage; i <= endPage; i++) {
+                paginationHtml += `<li><button onclick="goToPage(${i})" ${currentPage === i ? 'class="active"' : ''}>${i}</button></li>`;
+            }
+            
+            // 下一页按钮
+            paginationHtml += `<li><button onclick="goToPage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>下一页</button></li>`;
+            
+            // 末页按钮
+            paginationHtml += `<li><button onclick="goToPage(${totalPages})" ${currentPage === totalPages ? 'disabled' : ''}>末页</button></li>`;
+            
+            paginationHtml += '</ul>';
+            
+            paginationContainer.innerHTML = paginationInfo + paginationHtml;
+        }
+        
+        // 跳转到指定页码
+        function goToPage(page) {
+            if (page < 1 || page > totalPages) {
+                return;
+            }
+            currentPage = page;
+            
+            // 如果有筛选条件，使用带筛选的查询；否则使用普通查询
+            if (window.currentFilters && (window.currentFilters.searchTerm || window.currentFilters.filterIsUsing || window.currentFilters.filterSource || window.currentFilters.filterType)) {
+                fetchSystemInfoWithFilters(page);
+            } else {
+                fetchSystemInfoList(page);
+            }
+        }
+
+        // 显示加载状态
+        function showLoading() {
+            const tbody = document.getElementById('systemTableBody');
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="9" style="text-align: center; padding: 40px;">
+                        <div class="loading"></div>
+                        <div style="margin-top: 8px; color: var(--text-secondary);">加载中...</div>
+                    </td>
+                </tr>
+            `;
+        }
+
+        // 隐藏加载状态
+        function hideLoading() {
+            // 加载状态会在renderCurrentPage中自动替换
+        }
+
+        // 显示错误信息
+        function showError(message) {
+            const tbody = document.getElementById('systemTableBody');
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="9" style="text-align: center; padding: 40px; color: var(--danger-color);">
+                        <div style="font-size: 24px; margin-bottom: 8px;">❌</div>
+                        <div>${message}</div>
+                    </td>
+                </tr>
+            `;
+        }
+        
+        // 进入编辑模式
+        function editIdleFunctions(id) {
+            const container = document.querySelector(`[data-id="${id}"]`);
+            const viewDiv = container.querySelector('.idle-functions-view');
+            const editDiv = container.querySelector('.idle-functions-edit');
+            
+            viewDiv.style.display = 'none';
+            editDiv.classList.add('active');
+            
+            // 聚焦到输入框
+            setTimeout(() => {
+                document.getElementById(`idleFunctions_${id}`).focus();
+            }, 100);
+        }
+        
+        // 取消编辑
+        function cancelEditIdleFunctions(id) {
+            const container = document.querySelector(`[data-id="${id}"]`);
+            const viewDiv = container.querySelector('.idle-functions-view');
+            const editDiv = container.querySelector('.idle-functions-edit');
+            
+            viewDiv.style.display = 'block';
+            editDiv.classList.remove('active');
+        }
+        
+        // 保存闲置功能
+        function saveIdleFunctions(id) {
+            const idleFunctions = document.getElementById(`idleFunctions_${id}`).value.trim();
+            
+            // 显示保存中状态
+            const saveBtn = event.target;
+            const originalText = saveBtn.innerHTML;
+            saveBtn.innerHTML = '<span class="loading"></span> 保存中...';
+            saveBtn.disabled = true;
+            
+            fetch('/api/systemInfo/update', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    id: id,
+                    idleFunctions: idleFunctions
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.code === 0) {
+                    // 更新本地数据
+                    const item = systemInfoList.find(item => item.id === id);
+                    if (item) {
+                        item.idleFunctions = idleFunctions;
+                    }
+                    
+                    // 更新筛选列表中的数据
+                    const filteredItem = filteredList.find(item => item.id === id);
+                    if (filteredItem) {
+                        filteredItem.idleFunctions = idleFunctions;
+                    }
+                    
+                    // 重新渲染当前页
+                    renderCurrentPage();
+                    
+                    // 显示成功提示
+                    showToast('保存成功', 'success');
+                } else {
+                    showToast(data.errMsg || '保存失败', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('保存失败:', error);
+                showToast('保存失败，请重试', 'error');
+            })
+            .finally(() => {
+                // 恢复按钮状态
+                saveBtn.innerHTML = originalText;
+                saveBtn.disabled = false;
+            });
+        }
+
+        // 显示提示信息
+        function showToast(message, type = 'info') {
+            // 创建提示元素
+            const toast = document.createElement('div');
+            toast.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 12px 20px;
+                border-radius: 6px;
+                color: white;
+                font-size: 14px;
+                font-weight: 500;
+                z-index: 3000;
+                opacity: 0;
+                transform: translateX(100%);
+                transition: all 0.3s ease;
+                max-width: 300px;
+                word-wrap: break-word;
+            `;
+            
+            // 设置颜色
+            switch (type) {
+                case 'success':
+                    toast.style.background = 'var(--success-color)';
+                    break;
+                case 'error':
+                    toast.style.background = 'var(--danger-color)';
+                    break;
+                default:
+                    toast.style.background = 'var(--info-color)';
+            }
+            
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            
+            // 显示动画
+            setTimeout(() => {
+                toast.style.opacity = '1';
+                toast.style.transform = 'translateX(0)';
+            }, 100);
+            
+            // 自动隐藏
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateX(100%)';
+                setTimeout(() => {
+                    document.body.removeChild(toast);
+                }, 300);
+            }, 3000);
+        }
+
+        // 刷新数据
+        function refreshData() {
+            fetchSystemInfoList();
+            showToast('数据已刷新', 'success');
+        }
+
+        // 导出数据
+        function exportData() {
+            showToast('正在导出数据...', 'info');
+            
+            // 创建临时表单进行下载
+            const form = document.createElement('form');
+            form.method = 'GET';
+            form.action = '/api/systemInfo/export';
+            document.body.appendChild(form);
+            form.submit();
+            document.body.removeChild(form);
+            
+            setTimeout(() => {
+                showToast('导出完成', 'success');
+            }, 2000);
+        }
+
+        // 切换视图
+        function toggleView() {
+            const toggleText = document.getElementById('viewToggleText');
+            if (currentView === 'table') {
+                currentView = 'card';
+                toggleText.textContent = '卡片视图';
+                showToast('卡片视图开发中...', 'info');
+            } else {
+                currentView = 'table';
+                toggleText.textContent = '列表视图';
+            }
+        }
+
+        // 查看系统详情
+        function viewSystemInfo(id) {
+            const item = systemInfoList.find(item => item.id === id);
+            if (item) {
+                showToast(`查看 ${item.systemName} 详情`, 'info');
+                // 这里可以打开详情模态框
+            }
+        }
+
+        // 打开导入表单
+        function openImportForm() {
+            document.getElementById('importModal').style.display = 'flex';
+        }
+
+        // 关闭导入表单
+        function closeImportForm() {
+            document.getElementById('importModal').style.display = 'none';
+            document.getElementById('importForm').reset();
+        }
+
+        // 处理导入
+        function handleImport(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(e.target);
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            
+            // 显示导入中状态
+            const originalText = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<span class="loading"></span> 导入中...';
+            submitBtn.disabled = true;
+            
+            fetch('/api/systemInfo/import', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.code === 0) {
+                    showToast(data.errMsg || '导入成功', 'success');
+                    fetchSystemInfoList();
+                    closeImportForm();
+                } else {
+                    showToast(data.errMsg || '导入失败', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('导入失败:', error);
+                showToast('导入失败，请重试', 'error');
+            })
+            .finally(() => {
+                // 恢复按钮状态
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            });
+        }
+
+        // 删除系统信息
+        function deleteSystemInfo(id) {
+            const item = systemInfoList.find(item => item.id === id);
+            if (!item) return;
+            
+            if (confirm(`确定要删除系统"${item.systemName}"吗？此操作不可撤销。`)) {
+                fetch(`/api/systemInfo/delete/${id}`, {
+                    method: 'DELETE'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.code === 0) {
+                        showToast('删除成功', 'success');
+                        fetchSystemInfoList();
+                    } else {
+                        showToast(data.errMsg || '删除失败', 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('删除失败:', error);
+                    showToast('删除失败，请重试', 'error');
+                });
+            }
+        }
+
+        // 键盘快捷键
+        document.addEventListener('keydown', function(e) {
+            // Ctrl+F 或 Cmd+F 聚焦搜索框
+            if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+                e.preventDefault();
+                document.getElementById('searchInput').focus();
+            }
+            
+            // Escape 关闭模态框
+            if (e.key === 'Escape') {
+                closeImportForm();
+                closeDetailModal();
+            }
+        });
+
+        // ===== 高级功能实现 =====
+
+        // 切换统计视图显示
+        function toggleStatsView() {
+            showStats = !showStats;
+            const statsGrid = document.getElementById('statsGrid');
+            const statsToggleText = document.getElementById('statsToggleText');
+            
+            if (showStats) {
+                statsGrid.style.display = 'grid';
+                statsToggleText.textContent = '列表视图';
+                updateAdvancedStatistics();
+            } else {
+                statsGrid.style.display = 'none';
+                statsToggleText.textContent = '统计视图';
+            }
+        }
+
+        // 更新高级统计信息
+        function updateAdvancedStatistics() {
+            const usingCount = systemInfoList.filter(item => item.isUsing === '是').length;
+            const idleCount = systemInfoList.filter(item => item.isUsing === '否').length;
+            const promoteCount = systemInfoList.filter(item => item.canPromote === '是').length;
+            
+            document.getElementById('totalSystems').textContent = systemInfoList.length;
+            document.getElementById('usingSystems').textContent = usingCount;
+            document.getElementById('idleSystems').textContent = idleCount;
+            document.getElementById('promoteSystems').textContent = promoteCount;
+            
+            // 计算趋势（模拟数据）
+            const usingTrend = Math.floor(Math.random() * 20) - 10;
+            const idleTrend = Math.floor(Math.random() * 20) - 10;
+            const promoteTrend = Math.floor(Math.random() * 20) - 10;
+            
+            const usingTrendEl = document.getElementById('usingTrend');
+            const idleTrendEl = document.getElementById('idleTrend');
+            const promoteTrendEl = document.getElementById('promoteTrend');
+            
+            usingTrendEl.textContent = `${usingTrend >= 0 ? '+' : ''}${usingTrend}%`;
+            usingTrendEl.className = `stat-trend ${usingTrend >= 0 ? 'trend-up' : 'trend-down'}`;
+            
+            idleTrendEl.textContent = `${idleTrend >= 0 ? '+' : ''}${idleTrend}%`;
+            idleTrendEl.className = `stat-trend ${idleTrend >= 0 ? 'trend-up' : 'trend-down'}`;
+            
+            promoteTrendEl.textContent = `${promoteTrend >= 0 ? '+' : ''}${promoteTrend}%`;
+            promoteTrendEl.className = `stat-trend ${promoteTrend >= 0 ? 'trend-up' : 'trend-down'}`;
+        }
+
+        // 切换高级搜索显示
+        function toggleAdvancedSearch() {
+            const advancedSearch = document.getElementById('advancedSearch');
+            advancedSearch.classList.toggle('show');
+        }
+
+        // 清除高级搜索
+        function clearAdvancedSearch() {
+            document.getElementById('searchStartDate').value = '';
+            document.getElementById('searchEndDate').value = '';
+            document.getElementById('updateStartDate').value = '';
+            document.getElementById('updateEndDate').value = '';
+            document.getElementById('searchTags').value = '';
+            document.getElementById('searchRemarks').value = '';
+        }
+
+        // 应用高级搜索
+        function applyAdvancedSearch() {
+            const startDate = document.getElementById('searchStartDate').value;
+            const endDate = document.getElementById('searchEndDate').value;
+            const updateStartDate = document.getElementById('updateStartDate').value;
+            const updateEndDate = document.getElementById('updateEndDate').value;
+            const tags = document.getElementById('searchTags').value.toLowerCase();
+            const remarks = document.getElementById('searchRemarks').value.toLowerCase();
+
+            // 应用基础筛选
+            applyFilters();
+
+            // 应用高级筛选
+            filteredList = filteredList.filter(item => {
+                let matches = true;
+
+                // 创建时间范围筛选
+                if (startDate && item.createTime && item.createTime < startDate) matches = false;
+                if (endDate && item.createTime && item.createTime > endDate) matches = false;
+
+                // 更新时间范围筛选
+                if (updateStartDate && item.updateTime && item.updateTime < updateStartDate) matches = false;
+                if (updateEndDate && item.updateTime && item.updateTime > updateEndDate) matches = false;
+
+                // 标签筛选
+                if (tags && item.tags) {
+                    const itemTags = item.tags.toLowerCase();
+                    if (!tags.split(',').some(tag => itemTags.includes(tag.trim()))) {
+                        matches = false;
+                    }
+                }
+
+                // 备注筛选
+                if (remarks && item.remarks) {
+                    if (!item.remarks.toLowerCase().includes(remarks)) {
+                        matches = false;
+                    }
+                }
+
+                return matches;
+            });
+
+            totalCount = filteredList.length;
+            totalPages = Math.ceil(totalCount / pageSize);
+            currentPage = 1;
+            
+            renderCurrentPage();
+            renderPagination();
+            showEmptyState();
+            showToast('高级搜索已应用', 'success');
+        }
+
+        // 渲染卡片视图
+        function renderCardView(systemInfoList) {
+            const cardView = document.getElementById('cardView');
+            let html = '';
+            
+            if (systemInfoList.length === 0) {
+                return;
+            }
+
+            systemInfoList.forEach(item => {
+                const isSelected = selectedItems.has(item.id);
+                const usingStatus = item.isUsing === '是' ? 
+                    '<span class="status-badge status-success">使用中</span>' : 
+                    '<span class="status-badge status-warning">闲置中</span>';
+                
+                const promoteStatus = item.canPromote === '是' ? 
+                    '<span class="status-badge status-success">可推广</span>' : 
+                    '<span class="status-badge status-info">不可推广</span>';
+
+                html += `
+                    <div class="system-card ${isSelected ? 'selected' : ''}" data-id="${item.id}" onclick="toggleCardSelection(${item.id})">
+                        <div class="card-header">
+                            <h3 class="card-title">${item.systemName}</h3>
+                            <div class="card-actions">
+                                <input type="checkbox" class="select-checkbox" ${isSelected ? 'checked' : ''} onclick="event.stopPropagation(); toggleSelectItem(${item.id})">
+                                <button class="btn btn-sm btn-ghost" onclick="event.stopPropagation(); viewSystemInfo(${item.id})" title="查看详情">
+                                    👁️
+                                </button>
+                                <button class="btn btn-sm btn-ghost" onclick="event.stopPropagation(); deleteSystemInfo(${item.id})" title="删除">
+                                    🗑️
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-content">
+                            ${item.functionDesc}
+                        </div>
+                        <div class="card-meta">
+                            <div class="meta-item">
+                                <span class="meta-label">责任人:</span>${item.responsiblePerson}
+                            </div>
+                            <div class="meta-item">
+                                <span class="meta-label">来源:</span>${item.source}
+                            </div>
+                            <div class="meta-item">
+                                <span class="meta-label">类型:</span>${item.type}
+                            </div>
+                        </div>
+                        <div class="card-footer">
+                            <div>${usingStatus} ${promoteStatus}</div>
+                            <button class="btn btn-sm btn-secondary" onclick="event.stopPropagation(); editIdleFunctions(${item.id})">
+                                ✏️ 编辑闲置功能
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            cardView.innerHTML = html;
+        }
+
+        // 切换卡片选择
+        function toggleCardSelection(id) {
+            const card = document.querySelector(`[data-id="${id}"]`);
+            card.classList.toggle('selected');
+            toggleSelectItem(id);
+        }
+
+        // 切换视图模式
+        function toggleView() {
+            const toggleText = document.getElementById('viewToggleText');
+            const tableView = document.getElementById('tableView');
+            const cardView = document.getElementById('cardView');
+            
+            if (currentView === 'table') {
+                currentView = 'card';
+                toggleText.textContent = '列表视图';
+                tableView.style.display = 'none';
+                cardView.classList.add('active');
+                renderCardView(getCurrentPageData());
+            } else {
+                currentView = 'table';
+                toggleText.textContent = '卡片视图';
+                tableView.style.display = 'block';
+                cardView.classList.remove('active');
+            }
+        }
+
+        // 获取当前页数据
+        function getCurrentPageData() {
+            const startIndex = (currentPage - 1) * pageSize;
+            const endIndex = startIndex + pageSize;
+            return filteredList.slice(startIndex, endIndex);
+        }
+
+        // 选择/取消选择单个项目
+        function toggleSelectItem(id) {
+            if (selectedItems.has(id)) {
+                selectedItems.delete(id);
+            } else {
+                selectedItems.add(id);
+            }
+            
+            updateBatchActions();
+        }
+
+        // 全选/取消全选
+        function toggleSelectAll() {
+            const selectAll = document.getElementById('selectAll');
+            const currentData = getCurrentPageData();
+            
+            if (selectAll.checked) {
+                currentData.forEach(item => selectedItems.add(item.id));
+            } else {
+                currentData.forEach(item => selectedItems.delete(item.id));
+            }
+            
+            renderCurrentPage();
+            updateBatchActions();
+        }
+
+        // 更新批量操作栏显示
+        function updateBatchActions() {
+            const batchActions = document.getElementById('batchActions');
+            const selectedCount = document.getElementById('selectedCount');
+            const selectAll = document.getElementById('selectAll');
+            
+            selectedCount.textContent = selectedItems.size;
+            
+            if (selectedItems.size > 0) {
+                batchActions.classList.add('show');
+            } else {
+                batchActions.classList.remove('show');
+            }
+            
+            // 更新全选复选框状态
+            const currentData = getCurrentPageData();
+            const allSelected = currentData.length > 0 && currentData.every(item => selectedItems.has(item.id));
+            const noneSelected = currentData.every(item => !selectedItems.has(item.id));
+            
+            selectAll.checked = allSelected;
+            selectAll.indeterminate = !allSelected && !noneSelected;
+        }
+
+        // 取消选择
+        function cancelSelection() {
+            selectedItems.clear();
+            renderCurrentPage();
+            updateBatchActions();
+        }
+
+        // 导出选中的数据
+        function exportSelected() {
+            if (selectedItems.size === 0) {
+                showToast('请先选择要导出的数据', 'warning');
+                return;
+            }
+            
+            const selectedIds = Array.from(selectedItems).join(',');
+            showToast('正在导出选中数据...', 'info');
+            
+            // 使用GET请求提交选中的ID
+            const url = `/api/systemInfo/exportSelected?ids=${encodeURIComponent(selectedIds)}`;
+            
+            // 创建临时表单进行下载
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = url;
+            document.body.appendChild(form);
+            form.submit();
+            document.body.removeChild(form);
+            
+            setTimeout(() => {
+                showToast(`导出完成，共 ${selectedItems.size} 条数据`, 'success');
+            }, 2000);
+        }
+
+        // 删除选中的数据
+        function deleteSelected() {
+            if (selectedItems.size === 0) {
+                showToast('请先选择要删除的数据', 'warning');
+                return;
+            }
+            
+            if (confirm(`确定要删除选中的 ${selectedItems.size} 条数据吗？此操作不可撤销。`)) {
+                // 这里可以实现批量删除逻辑
+                showToast('批量删除功能开发中...', 'info');
+                cancelSelection();
+            }
+        }
+
+        // 查看系统详情
+        function viewSystemInfo(id) {
+            const item = systemInfoList.find(item => item.id === id);
+            if (item) {
+                currentDetailItem = item;
+                showDetailModal(item);
+            }
+        }
+
+        // 显示详情模态框
+        function showDetailModal(item) {
+            const modal = document.getElementById('detailModal');
+            const title = document.getElementById('detailTitle');
+            const body = document.getElementById('detailBody');
+            
+            title.textContent = item.systemName;
+            
+            const usingStatus = item.isUsing === '是' ? 
+                '<span class="status-badge status-success">使用中</span>' : 
+                '<span class="status-badge status-warning">闲置中</span>';
+            
+            const promoteStatus = item.canPromote === '是' ? 
+                '<span class="status-badge status-success">可推广</span>' : 
+                '<span class="status-badge status-info">不可推广</span>';
+
+            body.innerHTML = `
+                <div class="detail-section">
+                    <h4 class="detail-section-title">基本信息</h4>
+                    <div class="detail-grid">
+                        <div class="detail-item">
+                            <div class="detail-label">系统/接口名称</div>
+                            <div class="detail-value">${item.systemName}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">责任人</div>
+                            <div class="detail-value">${item.responsiblePerson}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">来源</div>
+                            <div class="detail-value">${item.source}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">类型</div>
+                            <div class="detail-value">${item.type}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">使用状态</div>
+                            <div class="detail-value">${usingStatus}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">推广状态</div>
+                            <div class="detail-value">${promoteStatus}</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="detail-section">
+                    <h4 class="detail-section-title">功能描述</h4>
+                    <div class="detail-value">${item.functionDesc || '暂无描述'}</div>
+                </div>
+                
+                <div class="detail-section">
+                    <h4 class="detail-section-title">闲置功能盘点</h4>
+                    <div class="detail-value">${item.idleFunctions || '暂无闲置功能描述'}</div>
+                </div>
+                
+                <div class="detail-section">
+                    <h4 class="detail-section-title">操作历史</h4>
+                    <div class="detail-grid">
+                        <div class="detail-item">
+                            <div class="detail-label">创建时间</div>
+                            <div class="detail-value">${item.createTime || '未知'}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">更新时间</div>
+                            <div class="detail-value">${item.updateTime || '未知'}</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            modal.classList.add('show');
+        }
+
+        // 关闭详情模态框
+        function closeDetailModal() {
+            const modal = document.getElementById('detailModal');
+            modal.classList.remove('show');
+            currentDetailItem = null;
+        }
+    </script>
+</body>
+</html>

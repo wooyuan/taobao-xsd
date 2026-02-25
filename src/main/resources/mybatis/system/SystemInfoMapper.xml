@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.taobao.logistics.mapper.SystemInfoMapper">
+
+    <resultMap type="com.taobao.logistics.model.SystemInfo" id="SystemInfoResult">
+        <id     property="id"                column="id"                />
+        <result property="systemName"        column="system_name"       />
+        <result property="functionDesc"      column="function_desc"     />
+        <result property="responsiblePerson" column="responsible_person"/>
+        <result property="source"            column="source"           />
+        <result property="type"              column="type"             />
+        <result property="isUsing"           column="is_using"         />
+        <result property="canPromote"        column="can_promote"      />
+        <result property="idleFunctions"     column="idle_functions"   />
+        <result property="createTime"        column="create_time"      />
+        <result property="updateTime"        column="update_time"      />
+    </resultMap>
+
+    <sql id="selectSystemInfoVo">
+        select id, system_name, function_desc, responsible_person, source, type, is_using, can_promote, idle_functions, create_time, update_time
+        from system_info
+    </sql>
+
+    <!-- 查询所有系统信息 -->
+    <select id="selectSystemInfoList" resultMap="SystemInfoResult">
+        <include refid="selectSystemInfoVo"/>
+        order by system_name
+    </select>
+
+    <!-- 根据ID查询系统信息 -->
+    <select id="selectSystemInfoById" parameterType="Long" resultMap="SystemInfoResult">
+        <include refid="selectSystemInfoVo"/>
+        where id = #{id}
+    </select>
+
+    <!-- 新增系统信息 -->
+    <insert id="insertSystemInfo" parameterType="com.taobao.logistics.model.SystemInfo">
+        insert into system_info(
+            id,
+            system_name,
+            function_desc,
+            responsible_person,
+            source,
+            type,
+            is_using,
+            can_promote,
+            idle_functions,
+            create_time,
+            update_time
+        )values(
+            SYSTEM_INFO_SEQ.NEXTVAL,
+            #{systemName},
+            #{functionDesc},
+            #{responsiblePerson},
+            #{source},
+            #{type},
+            #{isUsing},
+            #{canPromote},
+            #{idleFunctions},
+            sysdate,
+            sysdate
+        )
+    </insert>
+
+    <!-- 批量新增系统信息 -->
+    <insert id="batchInsertSystemInfo" parameterType="java.util.List">
+        insert into system_info(
+            id,
+            system_name,
+            function_desc,
+            responsible_person,
+            source,
+            type,
+            is_using,
+            can_promote,
+            idle_functions,
+            create_time,
+            update_time
+        )
+        select SYSTEM_INFO_SEQ.NEXTVAL, t.* from (
+        <foreach collection="list" item="item" separator="union all">
+            select
+                #{item.systemName} as system_name,
+                #{item.functionDesc} as function_desc,
+                #{item.responsiblePerson} as responsible_person,
+                #{item.source} as source,
+                #{item.type} as type,
+                #{item.isUsing} as is_using,
+                #{item.canPromote} as can_promote,
+                #{item.idleFunctions} as idle_functions,
+                sysdate as create_time,
+                sysdate as update_time
+            from dual
+        </foreach>
+        ) t
+    </insert>
+
+    <!-- 修改系统信息 -->
+    <update id="updateSystemInfo" parameterType="com.taobao.logistics.model.SystemInfo">
+        update system_info
+        <set>
+            <if test="systemName != null and systemName != ''">system_name = #{systemName},</if>
+            <if test="functionDesc != null">function_desc = #{functionDesc},</if>
+            <if test="responsiblePerson != null">responsible_person = #{responsiblePerson},</if>
+            <if test="source != null">source = #{source},</if>
+            <if test="type != null">type = #{type},</if>
+            <if test="isUsing != null">is_using = #{isUsing},</if>
+            <if test="canPromote != null">can_promote = #{canPromote},</if>
+            <if test="idleFunctions != null">idle_functions = #{idleFunctions},</if>
+            update_time = sysdate
+        </set>
+        where id = #{id}
+    </update>
+
+    <!-- 删除系统信息 -->
+    <delete id="deleteSystemInfoById" parameterType="Long">
+        delete from system_info where id = #{id}
+    </delete>
+
+    <!-- 批量删除系统信息 -->
+    <delete id="batchDeleteSystemInfo" parameterType="Long[]">
+        delete from system_info where id in
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+    <!-- 查询系统信息总数 -->
+    <select id="selectSystemInfoCount" resultType="Long">
+        select count(*) from system_info
+    </select>
+
+    <!-- 分页查询系统信息 -->
+    <select id="selectSystemInfoListByPage" parameterType="Map" resultMap="SystemInfoResult">
+        select * from (
+            select t.*, rownum rn from (
+                <include refid="selectSystemInfoVo"/>
+                order by system_name
+            ) t
+            where rownum &lt;= #{offset} + #{limit}
+        ) where rn > #{offset}
+    </select>
+
+</mapper>

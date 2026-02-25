@@ -1,23 +1,29 @@
 package com.taobao.logistics.controller;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Controller;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.taobao.api.ApiException;
 import com.taobao.logistics.integration.taobao.service.*;
 import com.taobao.logistics.utils.AjaxResult;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.util.StringUtils;
-import org.springframework.web.bind.annotation.*;
-import javax.validation.constraints.Positive;
 
-import java.net.URI;
 import java.time.*;
 import java.time.format.DateTimeFormatter;
-import java.util.HashMap;
 import java.util.Map;
+
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Positive;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
+import org.springframework.util.StringUtils;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.RestController;
 
 /**
  * 物流系统重定向控制器
@@ -439,6 +445,7 @@ public AjaxResult initStoreData() {
     }
     
 
+    
     /**
      * 测试方法（仅用于开发调试）
      * 注意：生产环境应移除此方法

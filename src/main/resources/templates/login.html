@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>系统登录</title>
+    <link rel="stylesheet" href="/static/layui/css/layui.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Helvetica Neue", Helvetica, Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .login-container {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            width: 100%;
+            max-width: 420px;
+            padding: 48px 40px;
+            animation: fadeInUp 0.6s ease-out;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .login-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .login-header h1 {
+            font-size: 28px;
+            color: #333;
+            margin-bottom: 12px;
+            font-weight: 600;
+        }
+
+        .login-header p {
+            color: #999;
+            font-size: 14px;
+        }
+
+        .login-form .layui-form-item {
+            margin-bottom: 24px;
+        }
+
+        .login-form .layui-form-label {
+            width: 0;
+            padding: 0;
+        }
+
+        .login-form .layui-input-block {
+            margin-left: 0;
+        }
+
+        .login-form .layui-input {
+            height: 48px;
+            line-height: 48px;
+            border: 2px solid #e8e8e8;
+            border-radius: 8px;
+            padding-left: 48px;
+            font-size: 15px;
+            transition: all 0.3s;
+        }
+
+        .login-form .layui-input:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .input-wrapper {
+            position: relative;
+        }
+
+        .input-wrapper::before {
+            content: '';
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 20px;
+            height: 20px;
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            z-index: 1;
+        }
+
+        .input-wrapper.username::before {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23999'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E");
+        }
+
+        .input-wrapper.password::before {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23999'%3E%3Cpath d='M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z'/%3E%3C/svg%3E");
+        }
+
+        .login-btn {
+            width: 100%;
+            height: 48px;
+            line-height: 48px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 8px;
+        }
+
+        .login-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .login-btn:active {
+            transform: translateY(0);
+        }
+
+        .login-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .login-footer {
+            text-align: center;
+            margin-top: 32px;
+            color: #999;
+            font-size: 13px;
+        }
+
+        .error-message {
+            color: #f56c6c;
+            font-size: 13px;
+            margin-top: 8px;
+            padding: 8px 12px;
+            background: #fef0f0;
+            border-radius: 4px;
+            display: none;
+        }
+
+        .error-message.show {
+            display: block;
+            animation: shake 0.4s;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-header">
+            <h1>系统登录</h1>
+            <p>请输入您的账号和密码</p>
+        </div>
+        
+        <form class="layui-form login-form" id="loginForm">
+            <div class="layui-form-item">
+                <div class="input-wrapper username">
+                    <input type="text" name="username" id="username" lay-verify="required" placeholder="请输入账号" class="layui-input" autocomplete="off">
+                </div>
+            </div>
+            
+            <div class="layui-form-item">
+                <div class="input-wrapper password">
+                    <input type="password" name="password" id="password" lay-verify="required" placeholder="请输入密码" class="layui-input" autocomplete="off">
+                </div>
+            </div>
+            
+            <div class="layui-form-item">
+                <button type="submit" class="login-btn" id="loginBtn">登录</button>
+            </div>
+            
+            <div class="error-message" id="errorMessage"></div>
+        </form>
+        
+        <div class="login-footer">
+            &copy; 2024 物流管理系统
+        </div>
+    </div>
+
+    <script src="/static/layui/layui.js"></script>
+    <script>
+        layui.use(['form', 'layer'], function() {
+            var form = layui.form;
+            var layer = layui.layer;
+            var $ = layui.jquery;
+            
+            form.on('submit(login)', function(data) {
+                var username = $('#username').val().trim();
+                var password = $('#password').val().trim();
+                var loginBtn = $('#loginBtn');
+                var errorMessage = $('#errorMessage');
+                
+                if (!username || !password) {
+                    showError('请输入账号和密码');
+                    return false;
+                }
+                
+                loginBtn.prop('disabled', true).text('登录中...');
+                errorMessage.removeClass('show');
+                
+                $.ajax({
+                    url: '/api/login',
+                    type: 'POST',
+                    data: {
+                        username: username,
+                        password: password
+                    },
+                    success: function(res) {
+                        if (res.code === 200) {
+                            layer.msg('登录成功', {icon: 1, time: 1500}, function() {
+                                window.location.href = '/system_dashboard';
+                            });
+                        } else {
+                            showError(res.msg || '登录失败');
+                            loginBtn.prop('disabled', false).text('登录');
+                        }
+                    },
+                    error: function() {
+                        showError('网络错误，请稍后重试');
+                        loginBtn.prop('disabled', false).text('登录');
+                    }
+                });
+                
+                return false;
+            });
+            
+            function showError(message) {
+                var errorMessage = $('#errorMessage');
+                errorMessage.text(message).addClass('show');
+                setTimeout(function() {
+                    errorMessage.removeClass('show');
+                }, 3000);
+            }
+            
+            $('#loginForm').on('submit', function(e) {
+                e.preventDefault();
+            });
+        });
+    </script>
+</body>
+</html>

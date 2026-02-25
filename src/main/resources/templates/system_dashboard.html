@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <title>公司业务系统情况统计</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/static/layui/css/layui.css">
+    <style>
+        :root {
+            --primary-color: #1A7AF8;
+            --primary-hover: #409EFF;
+            --success-color: #67C23A;
+            --warning-color: #E6A23C;
+            --danger-color: #F56C6C;
+            --info-color: #909399;
+            --bg-primary: #F2F3F5;
+            --bg-secondary: #FFFFFF;
+            --bg-hover: #F5F7FA;
+            --text-primary: #303133;
+            --text-secondary: #606266;
+            --text-placeholder: #C0C4CC;
+            --border-color: #E4E7ED;
+            --border-light: #EBEEF5;
+            --border-lighter: #F2F6FC;
+            --shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+            --shadow-lighter: 0 2px 4px rgba(0, 0, 0, 0.12);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Helvetica Neue", Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 24px;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0;
+        }
+        .header {
+            background: var(--bg-secondary);
+            padding: 24px;
+            border-radius: 12px;
+            box-shadow: var(--shadow-lighter);
+            border: 1px solid var(--border-light);
+            margin-bottom: 24px;
+            text-align: center;
+        }
+        .header h1 {
+            color: var(--text-primary);
+            margin: 0 0 16px 0;
+            font-size: 28px;
+            font-weight: 600;
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-hover));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .header .nav-links {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .header .nav-links .btn {
+            margin: 0;
+        }
+        .section {
+            background: var(--bg-secondary);
+            padding: 24px;
+            border-radius: 12px;
+            box-shadow: var(--shadow-lighter);
+            border: 1px solid var(--border-light);
+            margin-bottom: 24px;
+        }
+        .section h2 {
+            color: var(--text-primary);
+            margin: 0 0 20px 0;
+            font-size: 20px;
+            font-weight: 600;
+            padding-bottom: 12px;
+            border-bottom: 2px solid var(--border-lighter);
+            position: relative;
+        }
+        .section h2::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 60px;
+            height: 2px;
+            background: linear-gradient(90deg, var(--primary-color), var(--primary-hover));
+        }
+        /* 操作按钮样式 - 微信工作风格 */
+        .action-buttons {
+            margin-bottom: 24px;
+            text-align: right;
+        }
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 10px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            line-height: 1;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #1E9FFF, #40a9ff);
+            color: white;
+        }
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #40a9ff, #69c0ff);
+        }
+        .btn-edit {
+            background: linear-gradient(135deg, #5FB878, #73d13d);
+            color: white;
+            font-size: 12px;
+            padding: 6px 12px;
+        }
+        .btn-edit:hover {
+            background: linear-gradient(135deg, #73d13d, #95de64);
+        }
+        .btn-delete {
+            background: linear-gradient(135deg, #FF5722, #ff7a45);
+            color: white;
+            font-size: 12px;
+            padding: 6px 12px;
+        }
+        .btn-delete:hover {
+            background: linear-gradient(135deg, #ff7a45, #ffa940);
+        }
+        /* 时间轴样式 - 基于微信工作设计系统 */
+        .timeline {
+            position: relative;
+            padding-left: 40px;
+        }
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 16px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: linear-gradient(to bottom, 
+                rgba(26, 122, 248, 0.3) 0%, 
+                rgba(26, 122, 248, 0.6) 50%, 
+                rgba(26, 122, 248, 0.3) 100%);
+        }
+        .timeline-item {
+            position: relative;
+            margin-bottom: 32px;
+            opacity: 0;
+            transform: translateX(-20px);
+            animation: timelineSlideIn 0.6s ease-out forwards;
+        }
+        .timeline-item:nth-child(odd) {
+            animation-delay: 0.1s;
+        }
+        .timeline-item:nth-child(even) {
+            animation-delay: 0.2s;
+        }
+        @keyframes timelineSlideIn {
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -28px;
+            top: 12px;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            border: 3px solid white;
+            box-shadow: 0 0 0 3px rgba(26, 122, 248, 0.2);
+            transition: all 0.3s ease;
+        }
+        .timeline-item:hover::before {
+            transform: scale(1.2);
+            box-shadow: 0 0 0 6px rgba(26, 122, 248, 0.15);
+            background: var(--primary-hover);
+        }
+        .timeline-date {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--primary-color);
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .timeline-system-tag {
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-hover));
+            color: white;
+            padding: 4px 12px;
+            border-radius: 16px;
+            font-size: 12px;
+            font-weight: 500;
+            box-shadow: 0 2px 4px rgba(26, 122, 248, 0.3);
+            white-space: nowrap;
+        }
+        .timeline-content {
+            background: var(--bg-secondary);
+            padding: 20px;
+            border-radius: 12px;
+            border-left: 4px solid var(--primary-color);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        .timeline-content::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, 
+                transparent 0%, 
+                var(--primary-color) 50%, 
+                transparent 100%);
+        }
+        .timeline-content:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(26, 122, 248, 0.15);
+        }
+        .timeline-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+            line-height: 1.4;
+        }
+        .timeline-desc {
+            color: var(--text-secondary);
+            font-size: 14px;
+            line-height: 1.6;
+            margin-bottom: 16px;
+        }
+        .timeline-actions {
+            display: flex;
+            gap: 8px;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: all 0.3s ease;
+        }
+        .timeline-item:hover .timeline-actions {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        /* 时间轴状态指示器 */
+        .timeline-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-left: auto;
+        }
+        .status-indicator {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--success-color);
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        
+        /* 响应式时间轴 */
+        @media (max-width: 768px) {
+            .timeline {
+                padding-left: 32px;
+            }
+            .timeline::before {
+                left: 12px;
+            }
+            .timeline-item::before {
+                left: -24px;
+                width: 14px;
+                height: 14px;
+            }
+            .timeline-content {
+                padding: 16px;
+            }
+            .timeline-date {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 4px;
+            }
+        }
+        /* 表单样式 */
+        .form-container {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        .form-box {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            width: 400px;
+            max-width: 90%;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #333;
+        }
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .form-group textarea {
+            height: 100px;
+            resize: vertical;
+        }
+        .form-actions {
+            text-align: right;
+            margin-top: 20px;
+        }
+        /* 饼图容器 */
+        .chart-container {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        .pie-chart {
+            flex: 1;
+            min-width: 400px;
+            height: 400px;
+        }
+        .worktime-list {
+            flex: 1;
+            min-width: 300px;
+        }
+        .worktime-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .worktime-name {
+            font-weight: bold;
+        }
+        .worktime-hours {
+            color: #1E9FFF;
+            font-weight: bold;
+        }
+        .worktime-percentage {
+            color: #666;
+            font-size: 14px;
+        }
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .chart-container {
+                flex-direction: column;
+            }
+            .pie-chart,
+            .worktime-list {
+                min-width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>公司业务系统情况统计</h1>
+            <div class="nav-links">
+                <a href="/view/systemDashboard" class="btn btn-primary">系统时间轴</a>
+                <a href="/view/systemInfo" class="btn btn-primary">系统信息管理</a>
+                <a href="/view/workHour" class="btn btn-primary">员工工时管理</a>
+            </div>
+        </div>
+
+        <!-- 系统时间轴 -->
+        <div class="section">
+            <h2>一、系统发展时间轴</h2>
+            <div class="action-buttons" style="display: flex; justify-content: space-between; align-items: center;">
+                <div style="display: flex; align-items: center;">
+                    <label for="systemFilter" style="margin-right: 10px;">系统筛选：</label>
+                    <select id="systemFilter" class="btn" style="margin-left: 0; background: white; border: 1px solid #ddd; color: #333;" onchange="filterTimeline()">
+                        <option value="">全部系统</option>
+                        <option value="集团CRM">集团CRM</option>
+                        <option value="随手购">随手购</option>
+                        <option value="云平台">云平台</option>
+                        <option value="WING">WING</option>
+                        <option value="集团超市系统">集团超市系统</option>
+                        <option value="库存预警">库存预警</option>
+                        <option value="云学堂">云学堂</option>
+                        <option value="集团招聘">集团招聘</option>
+                        <option value="抖音来客">抖音来客</option>
+                        <option value="抖音小时达">抖音小时达</option>
+                        <option value="抖店">抖店</option>
+                        <option value="美团">美团</option>
+                        <option value="饿了么">饿了么</option>
+                        <option value="自研商城">自研商城</option>
+                        <option value="线上异常物流同步预警到企业微信">线上异常物流同步预警到企业微信</option>
+                        <option value="宿舍管理">宿舍管理</option>
+                        <option value="配件补单">配件补单</option>
+                        <option value="礼品卡（小程序）">礼品卡（小程序）</option>
+                        <option value="人才共享平台">人才共享平台</option>
+                        <option value="ENJOY销售排行">ENJOY销售排行</option>
+                        <option value="智慧门店">智慧门店</option>
+                        <option value="微数据分析">微数据分析</option>
+                        <option value="快递费报销">快递费报销</option>
+                        <option value="策略活动同步到有赞(部分)">策略活动同步到有赞(部分)</option>
+                        <option value="扫码购">扫码购</option>
+                        <option value="自助收银系统">自助收银系统</option>
+                        <option value="有赞订单对接">有赞订单对接</option>
+                        <option value="网易客服对接（有赞）">网易客服对接（有赞）</option>
+                        <option value="微信客诉">微信客诉</option>
+                        <option value="物流PDA">物流PDA</option>
+                        <option value="伯俊ERP">伯俊ERP</option>
+                        <option value="伯俊云POS">伯俊云POS</option>
+                        <option value="ENJOY选品系统">ENJOY选品系统</option>
+                        <option value="有赞商城">有赞商城</option>
+                        <option value="有赞CRM">有赞CRM</option>
+                        <option value="乐檬对接">乐檬对接</option>
+                        <option value="美团管家对接">美团管家对接</option>
+                        <option value="睿美云对接">睿美云对接</option>
+                        <option value="宜泊云停车系统接口对接">宜泊云停车系统接口对接</option>
+                    </select>
+                </div>
+                <button class="btn btn-primary" onclick="openAddForm()">添加时间轴事件</button>
+            </div>
+            <div class="timeline" id="timeline"></div>
+        </div>
+
+        <!-- 员工工时统计 -->
+        <div class="section">
+            <h2>二、员工开发工时统计</h2>
+            <div class="chart-container">
+                <div class="pie-chart">
+                    <canvas id="worktimeChart" width="400" height="400"></canvas>
+                </div>
+                <div class="worktime-list" id="worktimeList"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 添加/编辑表单 -->
+    <div class="form-container" id="formContainer">
+        <div class="form-box">
+            <h3 id="formTitle">添加时间轴事件</h3>
+            <form id="timelineForm">
+                <input type="hidden" id="id" name="id">
+                <div class="form-group">
+                    <label for="systemName">系统名称</label>
+                    <select id="systemName" name="systemName" required class="btn" style="background: white; border: 1px solid #ddd; color: #333; width: 100%; padding: 8px; text-align: left;">
+                        <option value="集团CRM">集团CRM</option>
+                        <option value="随手购">随手购</option>
+                        <option value="云平台">云平台</option>
+                        <option value="WING">WING</option>
+                        <option value="集团超市系统">集团超市系统</option>
+                        <option value="库存预警">库存预警</option>
+                        <option value="云学堂">云学堂</option>
+                        <option value="集团招聘">集团招聘</option>
+                        <option value="抖音来客">抖音来客</option>
+                        <option value="抖音小时达">抖音小时达</option>
+                        <option value="抖店">抖店</option>
+                        <option value="美团">美团</option>
+                        <option value="饿了么">饿了么</option>
+                        <option value="自研商城">自研商城</option>
+                        <option value="线上异常物流同步预警到企业微信">线上异常物流同步预警到企业微信</option>
+                        <option value="宿舍管理">宿舍管理</option>
+                        <option value="配件补单">配件补单</option>
+                        <option value="礼品卡（小程序）">礼品卡（小程序）</option>
+                        <option value="人才共享平台">人才共享平台</option>
+                        <option value="ENJOY销售排行">ENJOY销售排行</option>
+                        <option value="智慧门店">智慧门店</option>
+                        <option value="微数据分析">微数据分析</option>
+                        <option value="快递费报销">快递费报销</option>
+                        <option value="策略活动同步到有赞(部分)">策略活动同步到有赞(部分)</option>
+                        <option value="扫码购">扫码购</option>
+                        <option value="自助收银系统">自助收银系统</option>
+                        <option value="有赞订单对接">有赞订单对接</option>
+                        <option value="网易客服对接（有赞）">网易客服对接（有赞）</option>
+                        <option value="微信客诉">微信客诉</option>
+                        <option value="物流PDA">物流PDA</option>
+                        <option value="伯俊ERP">伯俊ERP</option>
+                        <option value="伯俊云POS">伯俊云POS</option>
+                        <option value="ENJOY选品系统">ENJOY选品系统</option>
+                        <option value="有赞商城">有赞商城</option>
+                        <option value="有赞CRM">有赞CRM</option>
+                        <option value="乐檬对接">乐檬对接</option>
+                        <option value="美团管家对接">美团管家对接</option>
+                        <option value="睿美云对接">睿美云对接</option>
+                        <option value="宜泊云停车系统接口对接">宜泊云停车系统接口对接</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="eventDate">事件日期</label>
+                    <input type="date" id="eventDate" name="eventDate" required>
+                </div>
+                <div class="form-group">
+                    <label for="title">事件标题</label>
+                    <input type="text" id="title" name="title" required placeholder="请输入事件标题">
+                </div>
+                <div class="form-group">
+                    <label for="description">事件描述</label>
+                    <textarea id="description" name="description" placeholder="请输入事件描述"></textarea>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn" style="background-color: #909399; color: white;" onclick="closeForm()">取消</button>
+                    <button type="submit" class="btn btn-primary">保存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="/static/layui/layui.js"></script>
+    <script>
+        // 全局变量
+        let currentEditId = null;
+        let timelineData = [];
+
+        // 模拟员工工时数据
+        const worktimeData = [
+            { name: '张三', hours: 120 },
+            { name: '李四', hours: 95 },
+            { name: '王五', hours: 80 },
+            { name: '赵六', hours: 75 },
+            { name: '钱七', hours: 60 }
+        ];
+
+        // 从后端API获取时间轴数据
+        function fetchTimelineData() {
+            fetch('/api/timeline/list')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.code === 0) {
+                        timelineData = data.data;
+                        renderTimeline();
+                    }
+                })
+                .catch(error => {
+                    console.error('获取时间轴数据失败:', error);
+                });
+        }
+
+        // 渲染时间轴
+        function renderTimeline() {
+            const container = document.getElementById('timeline');
+            let html = '';
+            
+            // 获取当前筛选的系统
+            const selectedSystem = document.getElementById('systemFilter').value;
+            
+            // 筛选数据
+            const filteredData = selectedSystem ? 
+                timelineData.filter(item => item.systemName === selectedSystem) : 
+                timelineData;
+            
+            filteredData.forEach(item => {
+                // 格式化日期
+                const eventDate = new Date(item.eventDate).toISOString().split('T')[0];
+                html += `
+                    <div class="timeline-item">
+                        <div class="timeline-date">
+                            <span class="timeline-date-text">${eventDate}</span>
+                            <span class="timeline-system-tag">${item.systemName}</span>
+                            <span class="timeline-status">
+                                <span class="status-indicator"></span>
+                                已完成
+                            </span>
+                        </div>
+                        <div class="timeline-content">
+                            <div class="timeline-title">${item.title}</div>
+                            <div class="timeline-desc">${item.description}</div>
+                            <div class="timeline-actions">
+                                <button class="btn btn-edit" onclick="openEditForm(${item.id})">
+                                    <i class="layui-icon">&#xe642;</i> 编辑
+                                </button>
+                                <button class="btn btn-delete" onclick="deleteTimeline(${item.id})">
+                                    <i class="layui-icon">&#xe640;</i> 删除
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+        }
+        
+        // 系统筛选函数
+        function filterTimeline() {
+            renderTimeline();
+        }
+
+        // 打开添加表单
+        function openAddForm() {
+            currentEditId = null;
+            document.getElementById('formTitle').textContent = '添加时间轴事件';
+            document.getElementById('timelineForm').reset();
+            document.getElementById('id').value = '';
+            document.getElementById('formContainer').style.display = 'flex';
+        }
+
+        // 打开编辑表单
+        function openEditForm(id) {
+            currentEditId = id;
+            document.getElementById('formTitle').textContent = '编辑时间轴事件';
+            
+            // 查找要编辑的数据
+            const item = timelineData.find(item => item.id === id);
+            if (item) {
+                // 格式化日期
+                const eventDate = new Date(item.eventDate).toISOString().split('T')[0];
+                document.getElementById('id').value = item.id;
+                document.getElementById('systemName').value = item.systemName;
+                document.getElementById('eventDate').value = eventDate;
+                document.getElementById('title').value = item.title;
+                document.getElementById('description').value = item.description || '';
+                document.getElementById('formContainer').style.display = 'flex';
+            }
+        }
+
+        // 关闭表单
+        function closeForm() {
+            document.getElementById('formContainer').style.display = 'none';
+        }
+
+        // 保存时间轴事件
+        document.getElementById('timelineForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = {
+                id: document.getElementById('id').value || null,
+                systemName: document.getElementById('systemName').value,
+                eventDate: document.getElementById('eventDate').value,
+                title: document.getElementById('title').value,
+                description: document.getElementById('description').value
+            };
+            
+            // 如果是编辑，调用更新API，否则调用添加API
+            const url = currentEditId ? '/api/timeline/update' : '/api/timeline/add';
+            const method = currentEditId ? 'PUT' : 'POST';
+            
+            fetch(url, {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(formData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.code === 0) {
+                    // 重新获取数据并渲染
+                    fetchTimelineData();
+                    closeForm();
+                } else {
+                    alert(data.errMsg || '操作失败');
+                }
+            })
+            .catch(error => {
+                console.error('保存失败:', error);
+                alert('保存失败，请重试');
+            });
+        });
+
+        // 删除时间轴事件
+        function deleteTimeline(id) {
+            if (confirm('确定要删除这个时间轴事件吗？')) {
+                fetch(`/api/timeline/delete/${id}`, {
+                    method: 'DELETE'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.code === 0) {
+                        // 重新获取数据并渲染
+                        fetchTimelineData();
+                    } else {
+                        alert(data.errMsg || '删除失败');
+                    }
+                })
+                .catch(error => {
+                    console.error('删除失败:', error);
+                    alert('删除失败，请重试');
+                });
+            }
+        }
+
+        // 渲染饼图
+        function renderPieChart() {
+            const canvas = document.getElementById('worktimeChart');
+            const ctx = canvas.getContext('2d');
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const radius = Math.min(centerX, centerY) - 50;
+            
+            // 计算总工时
+            const totalHours = worktimeData.reduce((sum, item) => sum + item.hours, 0);
+            
+            // 定义颜色
+            const colors = ['#1E9FFF', '#5FB878', '#FFB800', '#FF5722', '#909399'];
+            
+            let startAngle = 0;
+            
+            // 绘制饼图
+            worktimeData.forEach((item, index) => {
+                const percentage = item.hours / totalHours;
+                const endAngle = startAngle + percentage * 2 * Math.PI;
+                
+                // 绘制扇形
+                ctx.beginPath();
+                ctx.moveTo(centerX, centerY);
+                ctx.arc(centerX, centerY, radius, startAngle, endAngle);
+                ctx.closePath();
+                ctx.fillStyle = colors[index];
+                ctx.fill();
+                
+                // 绘制扇形边界
+                ctx.strokeStyle = 'white';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+                
+                // 计算并绘制标签线和文本
+                const midAngle = startAngle + (endAngle - startAngle) / 2;
+                const labelX = centerX + Math.cos(midAngle) * (radius + 30);
+                const labelY = centerY + Math.sin(midAngle) * (radius + 30);
+                
+                ctx.beginPath();
+                ctx.moveTo(centerX + Math.cos(midAngle) * radius, centerY + Math.sin(midAngle) * radius);
+                ctx.lineTo(labelX, labelY);
+                ctx.strokeStyle = colors[index];
+                ctx.lineWidth = 1;
+                ctx.stroke();
+                
+                ctx.fillStyle = '#333';
+                ctx.font = '14px Microsoft YaHei';
+                ctx.textAlign = 'center';
+                ctx.fillText(item.name, labelX, labelY - 10);
+                ctx.fillText(`${item.hours}h`, labelX, labelY + 10);
+                
+                startAngle = endAngle;
+            });
+        }
+
+        // 渲染工时列表
+        function renderWorktimeList() {
+            const container = document.getElementById('worktimeList');
+            const totalHours = worktimeData.reduce((sum, item) => sum + item.hours, 0);
+            
+            let html = '';
+            worktimeData.forEach(item => {
+                const percentage = ((item.hours / totalHours) * 100).toFixed(1);
+                html += `
+                    <div class="worktime-item">
+                        <div>
+                            <div class="worktime-name">${item.name}</div>
+                            <div class="worktime-percentage">占比: ${percentage}%</div>
+                        </div>
+                        <div class="worktime-hours">${item.hours} 小时</div>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+        }
+
+        // 页面加载完成后渲染所有内容
+        document.addEventListener('DOMContentLoaded', function() {
+            fetchTimelineData();
+            renderPieChart();
+            renderWorktimeList();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.taobao.logistics.mapper.TimeLineMapper">
+
+    <resultMap type="com.taobao.logistics.model.TimeLine" id="TimeLineResult">
+        <id     property="id"           column="id"            />
+        <result property="systemName"   column="system_name"   />
+        <result property="eventDate"    column="event_date"    />
+        <result property="title"        column="title"         />
+        <result property="description"  column="description"   />
+        <result property="createTime"   column="create_time"   />
+        <result property="updateTime"   column="update_time"   />
+    </resultMap>
+
+    <sql id="selectTimeLineVo">
+        select id, system_name, event_date, title, description, create_time, update_time
+        from system_timeline
+    </sql>
+
+    <!-- 查询所有时间轴记录 -->
+    <select id="selectTimeLineList" resultMap="TimeLineResult">
+        <include refid="selectTimeLineVo"/>
+        order by event_date desc
+    </select>
+
+    <!-- 根据ID查询时间轴记录 -->
+    <select id="selectTimeLineById" parameterType="Long" resultMap="TimeLineResult">
+        <include refid="selectTimeLineVo"/>
+        where id = #{id}
+    </select>
+
+    <!-- 新增时间轴记录 -->
+    <insert id="insertTimeLine" parameterType="com.taobao.logistics.model.TimeLine">
+        insert into system_timeline(
+            system_name,
+            event_date,
+            title,
+            <if test="description != null and description != ''">description,</if>
+            create_time,
+            update_time
+        )values(
+            #{systemName},
+            #{eventDate},
+            #{title},
+            <if test="description != null and description != ''">#{description},</if>
+            sysdate,
+            sysdate
+        )
+    </insert>
+
+    <!-- 修改时间轴记录 -->
+    <update id="updateTimeLine" parameterType="com.taobao.logistics.model.TimeLine">
+        update system_timeline
+        <set>
+            <if test="systemName != null and systemName != ''">system_name = #{systemName},</if>
+            <if test="eventDate != null">event_date = #{eventDate},</if>
+            <if test="title != null and title != ''">title = #{title},</if>
+            <if test="description != null">description = #{description},</if>
+            update_time = sysdate
+        </set>
+        where id = #{id}
+    </update>
+
+    <!-- 删除时间轴记录 -->
+    <delete id="deleteTimeLineById" parameterType="Long">
+        delete from system_timeline where id = #{id}
+    </delete>
+
+</mapper>

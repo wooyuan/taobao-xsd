@@ -1,10 +1,17 @@
 spring:
     datasource:
-      type: com.alibaba.druid.pool.DruidDataSource
-      driver-class-name: oracle.jdbc.OracleDriver
-      url: jdbc:oracle:thin:@10.100.21.151:1521/orcl
-      username: neands3
-      password: abc123
+      primary:
+        type: com.alibaba.druid.pool.DruidDataSource
+        driver-class-name: oracle.jdbc.OracleDriver
+        url: jdbc:oracle:thin:@10.100.21.151:1521/orcl
+        username: neands3
+        password: abc123
+      secondary:
+        type: com.alibaba.druid.pool.DruidDataSource
+        driver-class-name: oracle.jdbc.OracleDriver
+        url: jdbc:oracle:thin:@10.100.20.70:1521/orcl
+        username: neands3
+        password: abc123
     jpa:
 #      hibernate:
 #        ddl-auto: update

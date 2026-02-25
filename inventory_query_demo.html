@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <title>库存查询演示</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <style>
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        body {
+            font-family: "Microsoft YaHei", "Helvetica Neue", Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f5f5;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        
+        .container {
+            min-height: 100vh;
+            padding-bottom: 60px;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #1E9FFF 0%, #40a9ff 100%);
+            color: white;
+            padding: 20px 16px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(30, 159, 255, 0.3);
+        }
+        
+        .header h1 {
+            margin: 0;
+            font-size: 20px;
+            font-weight: 500;
+        }
+        
+        .header .subtitle {
+            font-size: 12px;
+            opacity: 0.9;
+            margin-top: 4px;
+        }
+        
+        .search-section {
+            background: white;
+            padding: 16px;
+            margin-bottom: 12px;
+            border-radius: 0;
+        }
+        
+        .search-form {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        
+        .input-group {
+            position: relative;
+        }
+        
+        .input-label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 500;
+            color: #333;
+            font-size: 13px;
+        }
+        
+        .input-field {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            background-color: #fafafa;
+            transition: all 0.3s ease;
+        }
+        
+        .input-field:focus {
+            outline: none;
+            border-color: #1E9FFF;
+            background-color: white;
+            box-shadow: 0 0 0 3px rgba(30, 159, 255, 0.1);
+        }
+        
+        .search-btn {
+            background: linear-gradient(135deg, #1E9FFF 0%, #40a9ff 100%);
+            color: white;
+            border: none;
+            padding: 14px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 8px;
+        }
+        
+        .search-btn:active {
+            transform: translateY(1px);
+        }
+        
+        .search-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .quick-search {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
+        }
+        
+        .quick-btn {
+            flex: 1;
+            padding: 8px 12px;
+            background: #f0f2f5;
+            border: 1px solid #e8e8e8;
+            border-radius: 6px;
+            color: #666;
+            font-size: 12px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .quick-btn:active {
+            background: #e6f7ff;
+            color: #1E9FFF;
+            border-color: #91d5ff;
+        }
+        
+        .results-section {
+            background: white;
+            margin: 12px;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+        
+        .results-header {
+            background: #f8f9fa;
+            padding: 12px 16px;
+            border-bottom: 1px solid #e8e8e8;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .results-title {
+            font-weight: 500;
+            color: #333;
+            font-size: 14px;
+        }
+        
+        .results-count {
+            background: #1E9FFF;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 12px;
+        }
+        
+        .inventory-list {
+            max-height: calc(100vh - 300px);
+            overflow-y: auto;
+        }
+        
+        .inventory-item {
+            border-bottom: 1px solid #f0f0f0;
+            padding: 16px;
+            transition: background-color 0.3s ease;
+        }
+        
+        .inventory-item:last-child {
+            border-bottom: none;
+        }
+        
+        .inventory-item:active {
+            background-color: #f8f9fa;
+        }
+        
+        .item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 8px;
+        }
+        
+        .item-title {
+            font-weight: 500;
+            color: #333;
+            font-size: 15px;
+            flex: 1;
+        }
+        
+        .stock-status {
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 500;
+        }
+        
+        .stock-status.in-stock {
+            background: #f6ffed;
+            color: #52c41a;
+            border: 1px solid #b7eb8f;
+        }
+        
+        .stock-status.low-stock {
+            background: #fff2e8;
+            color: #fa8c16;
+            border: 1px solid #ffd591;
+        }
+        
+        .stock-status.out-of-stock {
+            background: #fff2f0;
+            color: #ff4d4f;
+            border: 1px solid #ffccc7;
+        }
+        
+        .item-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            font-size: 13px;
+        }
+        
+        .detail-item {
+            display: flex;
+            align-items: center;
+        }
+        
+        .detail-label {
+            color: #666;
+            margin-right: 6px;
+            min-width: 40px;
+        }
+        
+        .detail-value {
+            color: #333;
+            font-weight: 500;
+        }
+        
+        .store-info {
+            background: #f8f9fa;
+            padding: 8px 12px;
+            margin-top: 8px;
+            border-radius: 6px;
+            font-size: 12px;
+            color: #666;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+        
+        .empty-icon {
+            font-size: 48px;
+            color: #ddd;
+            margin-bottom: 16px;
+        }
+        
+        .loading-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #666;
+        }
+        
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #1E9FFF;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 8px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .footer-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            border-top: 1px solid #e8e8e8;
+            display: flex;
+            padding: 8px 0;
+            z-index: 1000;
+        }
+        
+        .nav-item {
+            flex: 1;
+            text-align: center;
+            color: #666;
+            text-decoration: none;
+            font-size: 11px;
+            padding: 4px 0;
+        }
+        
+        .nav-item:active,
+        .nav-item.active {
+            color: #1E9FFF;
+        }
+        
+        .nav-icon {
+            display: block;
+            font-size: 20px;
+            margin-bottom: 2px;
+        }
+        
+        @media (max-width: 375px) {
+            .item-details {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .alert {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #333;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 6px;
+            font-size: 14px;
+            z-index: 9999;
+            opacity: 0.9;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 头部 -->
+        <div class="header">
+            <h1>库存查询</h1>
+            <div class="subtitle">企业微信移动端演示</div>
+        </div>
+
+        <!-- 搜索区域 -->
+        <div class="search-section">
+            <div class="search-form">
+                <div class="input-group">
+                    <label class="input-label">款号</label>
+                    <input type="text" class="input-field" id="styleNumber" placeholder="请输入款号" maxlength="50">
+                </div>
+                
+                <div class="input-group">
+                    <label class="input-label">条码</label>
+                    <input type="text" class="input-field" id="barcode" placeholder="请输入条码" maxlength="50">
+                </div>
+                
+                <div class="input-group">
+                    <label class="input-label">原厂编号</label>
+                    <input type="text" class="input-field" id="factoryCode" placeholder="请输入原厂编号" maxlength="50">
+                </div>
+                
+                <button class="search-btn" id="searchBtn" onclick="searchInventory()">
+                    🔍 查询库存
+                </button>
+                
+                <div class="quick-search">
+                    <div class="quick-btn" onclick="quickSearch('style')">按款号</div>
+                    <div class="quick-btn" onclick="quickSearch('barcode')">按条码</div>
+                    <div class="quick-btn" onclick="quickSearch('factory')">按编号</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 结果展示区域 -->
+        <div class="results-section" id="resultsSection" style="display: none;">
+            <div class="results-header">
+                <div class="results-title">查询结果</div>
+                <div class="results-count" id="resultCount">0</div>
+            </div>
+            <div class="inventory-list" id="inventoryList">
+                <!-- 库存列表将在这里动态生成 -->
+            </div>
+        </div>
+    </div>
+
+    <!-- 底部导航 -->
+    <div class="footer-nav">
+        <a href="#" class="nav-item">
+            <span class="nav-icon">📊</span>
+            工时管理
+        </a>
+        <a href="#" class="nav-item active">
+            <span class="nav-icon">📦</span>
+            库存查询
+        </a>
+        <a href="#" class="nav-item">
+            <span class="nav-icon">📈</span>
+            销售报表
+        </a>
+        <a href="#" class="nav-item">
+            <span class="nav-icon">⚙️</span>
+            系统设置
+        </a>
+    </div>
+
+    <script>
+        let isSearching = false;
+
+        // 模拟库存数据
+        const MOCK_INVENTORY_DATA = [
+            {
+                id: 1,
+                productName: "男士休闲T恤",
+                styleNumber: "TX001",
+                barcode: "6901234567890",
+                factoryCode: "FC001",
+                color: "白色",
+                size: "L",
+                storeName: "北京朝阳店",
+                storeAddress: "北京市朝阳区三里屯路1号",
+                stockQuantity: 15,
+                minStockThreshold: 5,
+                status: 1
+            },
+            {
+                id: 2,
+                productName: "女士连衣裙",
+                styleNumber: "DQ002",
+                barcode: "6901234567891",
+                factoryCode: "FC002",
+                color: "红色",
+                size: "M",
+                storeName: "上海南京路店",
+                storeAddress: "上海市黄浦区南京东路100号",
+                stockQuantity: 3,
+                minStockThreshold: 5,
+                status: 2
+            },
+            {
+                id: 3,
+                productName: "运动鞋",
+                styleNumber: "SX003",
+                barcode: "6901234567892",
+                factoryCode: "FC003",
+                color: "黑色",
+                size: "42",
+                storeName: "深圳华强北店",
+                storeAddress: "深圳市福田区华强北路200号",
+                stockQuantity: 0,
+                minStockThreshold: 10,
+                status: 3
+            },
+            {
+                id: 4,
+                productName: "男士休闲T恤",
+                styleNumber: "TX001",
+                barcode: "6901234567893",
+                factoryCode: "FC001",
+                color: "蓝色",
+                size: "M",
+                storeName: "广州天河店",
+                storeAddress: "广州市天河区天河路300号",
+                stockQuantity: 8,
+                minStockThreshold: 5,
+                status: 1
+            },
+            {
+                id: 5,
+                productName: "女士牛仔裤",
+                styleNumber: "NZ004",
+                barcode: "6901234567894",
+                factoryCode: "FC004",
+                color: "蓝色",
+                size: "S",
+                storeName: "杭州西湖店",
+                storeAddress: "杭州市西湖区西湖路100号",
+                stockQuantity: 12,
+                minStockThreshold: 3,
+                status: 1
+            },
+            {
+                id: 6,
+                productName: "运动鞋",
+                styleNumber: "SX003",
+                barcode: "6901234567895",
+                factoryCode: "FC003",
+                color: "白色",
+                size: "40",
+                storeName: "成都春熙路店",
+                storeAddress: "成都市锦江区春熙路200号",
+                stockQuantity: 6,
+                minStockThreshold: 10,
+                status: 2
+            },
+            {
+                id: 7,
+                productName: "男士衬衫",
+                styleNumber: "CS005",
+                barcode: "6901234567896",
+                factoryCode: "FC005",
+                color: "白色",
+                size: "XL",
+                storeName: "西安钟楼店",
+                storeAddress: "西安市莲湖区钟鼓楼广场100号",
+                stockQuantity: 20,
+                minStockThreshold: 5,
+                status: 1
+            },
+            {
+                id: 8,
+                productName: "女士连衣裙",
+                styleNumber: "DQ002",
+                barcode: "6901234567897",
+                factoryCode: "FC002",
+                color: "黑色",
+                size: "L",
+                storeName: "南京新街口店",
+                storeAddress: "南京市玄武区新街口100号",
+                stockQuantity: 7,
+                minStockThreshold: 5,
+                status: 1
+            }
+        ];
+
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            // 监听输入框回车事件
+            document.querySelectorAll('.input-field').forEach(input => {
+                input.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        searchInventory();
+                    }
+                });
+            });
+        });
+
+        // 快速搜索
+        function quickSearch(type) {
+            const input = document.getElementById(type === 'style' ? 'styleNumber' : 
+                           type === 'barcode' ? 'barcode' : 'factoryCode');
+            if (input && input.value.trim()) {
+                searchInventory();
+            } else {
+                showAlert('请先输入搜索内容');
+            }
+        }
+
+        // 显示提示消息
+        function showAlert(message) {
+            const alert = document.createElement('div');
+            alert.className = 'alert';
+            alert.textContent = message;
+            document.body.appendChild(alert);
+            
+            setTimeout(() => {
+                alert.remove();
+            }, 2000);
+        }
+
+        // 搜索库存
+        async function searchInventory() {
+            if (isSearching) return;
+            
+            const styleNumber = document.getElementById('styleNumber').value.trim();
+            const barcode = document.getElementById('barcode').value.trim();
+            const factoryCode = document.getElementById('factoryCode').value.trim();
+            
+            // 至少输入一个搜索条件
+            if (!styleNumber && !barcode && !factoryCode) {
+                showAlert('请至少输入一个搜索条件');
+                return;
+            }
+            
+            isSearching = true;
+            const searchBtn = document.getElementById('searchBtn');
+            searchBtn.disabled = true;
+            searchBtn.textContent = '🔄 查询中...';
+            
+            // 显示加载状态
+            showLoadingState();
+            
+            // 模拟API调用延迟
+            setTimeout(() => {
+                try {
+                    // 构建查询参数
+                    let filteredData = MOCK_INVENTORY_DATA;
+                    
+                    // 根据查询条件过滤数据
+                    if (styleNumber) {
+                        filteredData = filteredData.filter(item => 
+                            item.styleNumber && item.styleNumber.toLowerCase().includes(styleNumber.toLowerCase())
+                        );
+                    }
+                    
+                    if (barcode) {
+                        filteredData = filteredData.filter(item => 
+                            item.barcode && item.barcode.includes(barcode)
+                        );
+                    }
+                    
+                    if (factoryCode) {
+                        filteredData = filteredData.filter(item => 
+                            item.factoryCode && item.factoryCode.toLowerCase().includes(factoryCode.toLowerCase())
+                        );
+                    }
+                    
+                    displayResults(filteredData);
+                    
+                } catch (error) {
+                    console.error('查询库存失败:', error);
+                    showErrorState(error.message);
+                } finally {
+                    isSearching = false;
+                    searchBtn.disabled = false;
+                    searchBtn.textContent = '🔍 查询库存';
+                }
+            }, 800);
+        }
+
+        // 显示加载状态
+        function showLoadingState() {
+            const resultsSection = document.getElementById('resultsSection');
+            const inventoryList = document.getElementById('inventoryList');
+            
+            resultsSection.style.display = 'block';
+            inventoryList.innerHTML = `
+                <div class="loading-state">
+                    <div class="loading-spinner"></div>
+                    正在查询库存数据...
+                </div>
+            `;
+        }
+
+        // 显示错误状态
+        function showErrorState(message) {
+            const resultsSection = document.getElementById('resultsSection');
+            const inventoryList = document.getElementById('inventoryList');
+            
+            resultsSection.style.display = 'block';
+            inventoryList.innerHTML = `
+                <div class="error-state">
+                    <div class="error-icon">❌</div>
+                    <div>查询失败</div>
+                    <div style="font-size: 12px; margin-top: 8px; color: #999;">${message}</div>
+                </div>
+            `;
+        }
+
+        // 显示空状态
+        function showEmptyState() {
+            const resultsSection = document.getElementById('resultsSection');
+            const inventoryList = document.getElementById('inventoryList');
+            
+            resultsSection.style.display = 'block';
+            inventoryList.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-icon">📦</div>
+                    <div>暂无库存数据</div>
+                    <div style="font-size: 12px; margin-top: 8px; color: #999;">
+                        请检查搜索条件是否正确
+                    </div>
+                </div>
+            `;
+        }
+
+        // 显示查询结果
+        function displayResults(data) {
+            const resultsSection = document.getElementById('resultsSection');
+            const inventoryList = document.getElementById('inventoryList');
+            const resultCount = document.getElementById('resultCount');
+            
+            if (!data || data.length === 0) {
+                resultCount.textContent = '0';
+                showEmptyState();
+                return;
+            }
+            
+            resultCount.textContent = resultsSection.style.display = 'block';
+            
+            // 生成 data.length;
+           库存列表HTML
+            const listHTML = data.map(item => {
+                const stockStatus = getStockStatus(item.stockQuantity);
+                const stockClass = stockStatus.class;
+                const stockText = stockStatus.text;
+                
+                return `
+                    <div class="inventory-item" onclick="viewItemDetail('${item.id}')">
+                        <div class="item-header">
+                            <div class="item-title">${item.productName}</div>
+                            <div class="stock-status ${stockClass}">${stockText}</div>
+                        </div>
+                        <div class="item-details">
+                            <div class="detail-item">
+                                <span class="detail-label">门店:</span>
+                                <span class="detail-value">${item.storeName}</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">库存:</span>
+                                <span class="detail-value">${item.stockQuantity}</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">颜色:</span>
+                                <span class="detail-value">${item.color}</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">尺寸:</span>
+                                <span class="detail-value">${item.size}</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">款号:</span>
+                                <span class="detail-value">${item.styleNumber}</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">条码:</span>
+                                <span class="detail-value">${item.barcode}</span>
+                            </div>
+                        </div>
+                        <div class="store-info">
+                            📍 ${item.storeAddress}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            inventoryList.innerHTML = listHTML;
+        }
+
+        // 获取库存状态样式
+        function getStockStatus(quantity) {
+            if (!quantity || quantity <= 0) {
+                return {
+                    class: 'out-of-stock',
+                    text: '缺货'
+                };
+            } else if (quantity <= 5) {
+                return {
+                    class: 'low-stock',
+                    text: '低库存'
+                };
+            } else {
+                return {
+                    class: 'in-stock',
+                    text: '有库存'
+                };
+            }
+        }
+
+        // 查看商品详情
+        function viewItemDetail(itemId) {
+            showAlert('商品详情功能开发中...');
+        }
+
+        // 格式化日期
+        function formatDate(dateString) {
+            if (!dateString) return '-';
+            const date = new Date(dateString);
+            return date.toLocaleDateString('zh-CN', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+    </script>
+</body>
+</html>

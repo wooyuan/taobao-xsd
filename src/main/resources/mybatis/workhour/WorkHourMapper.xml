@@ -1,0 +1,219 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.taobao.logistics.mapper.WorkHourMapper">
+
+    <resultMap type="com.taobao.logistics.model.WorkHour" id="WorkHourResult">
+        <id     property="id"                column="id"                />
+        <result property="system"            column="system"            />
+        <result property="workMonth"         column="work_month"        />
+        <result property="workWeek"          column="work_week"         />
+        <result property="workWeekEndDate"   column="work_week_end_date"/>
+        <result property="employee"          column="employee"          />
+        <result property="workCategory"      column="work_category"     />
+        <result property="type"              column="type"              />
+        <result property="item"              column="item"              />
+        <result property="reporter"          column="reporter"          />
+        <result property="costDepartment"    column="cost_department"   />
+        <result property="plannedHours"      column="planned_hours"     />
+        <result property="actualHours"       column="actual_hours"      />
+        <result property="createTime"        column="create_time"       />
+        <result property="updateTime"        column="update_time"       />
+    </resultMap>
+
+    <sql id="selectWorkHourVo">
+        select id, system, work_month, work_week, work_week_end_date, employee, work_category, type, item, reporter, cost_department, planned_hours, actual_hours, create_time, update_time
+        from work_hour
+    </sql>
+
+    <!-- 查询所有工时记录 -->
+    <select id="selectWorkHourList" resultMap="WorkHourResult">
+        <include refid="selectWorkHourVo"/>
+        order by system, work_month, work_week, employee
+    </select>
+
+    <!-- 根据ID查询工时记录 -->
+    <select id="selectWorkHourById" parameterType="Long" resultMap="WorkHourResult">
+        <include refid="selectWorkHourVo"/>
+        where id = #{id}
+    </select>
+
+    <!-- 新增工时记录 -->
+    <insert id="insertWorkHour" parameterType="com.taobao.logistics.model.WorkHour">
+        insert into work_hour(
+            system,
+            work_month,
+            work_week,
+            work_week_end_date,
+            employee,
+            work_category,
+            type,
+            item,
+            reporter,
+            cost_department,
+            planned_hours,
+            actual_hours,
+            create_time,
+            update_time
+        )values(
+            #{system},
+            #{workMonth},
+            #{workWeek},
+            #{workWeekEndDate, jdbcType=VARCHAR},
+            #{employee},
+            #{workCategory},
+            #{type},
+            #{item},
+            #{reporter},
+            #{costDepartment},
+            #{plannedHours, jdbcType=DOUBLE},
+            #{actualHours, jdbcType=DOUBLE},
+            sysdate,
+            sysdate
+        )
+    </insert>
+
+    <!-- 批量新增工时记录 -->
+    <insert id="batchInsertWorkHour" parameterType="java.util.List">
+        insert into work_hour(
+            id,
+            system,
+            work_month,
+            work_week,
+            work_week_end_date,
+            employee,
+            work_category,
+            type,
+            item,
+            reporter,
+            cost_department,
+            planned_hours,
+            actual_hours,
+            create_time,
+            update_time
+        )
+        select WORK_HOUR_SEQ.NEXTVAL, t.* from (
+        <foreach collection="list" item="item" separator="union all">
+            select
+                #{item.system} as system,
+                #{item.workMonth} as work_month,
+                #{item.workWeek} as work_week,
+                #{item.workWeekEndDate, jdbcType=VARCHAR} as work_week_end_date,
+                #{item.employee} as employee,
+                #{item.workCategory} as work_category,
+                #{item.type} as type,
+                #{item.item} as item,
+                #{item.reporter} as reporter,
+                #{item.costDepartment} as cost_department,
+                #{item.plannedHours, jdbcType=DOUBLE} as planned_hours,
+                #{item.actualHours, jdbcType=DOUBLE} as actual_hours,
+                sysdate as create_time,
+                sysdate as update_time
+            from dual
+        </foreach>
+        ) t
+    </insert>
+
+    <!-- 修改工时记录 -->
+    <update id="updateWorkHour" parameterType="com.taobao.logistics.model.WorkHour">
+        update work_hour
+        <set>
+            <if test="system != null and system != ''">system = #{system},</if>
+            <if test="workMonth != null and workMonth != ''">work_month = #{workMonth},</if>
+            <if test="workWeek != null and workWeek != ''">work_week = #{workWeek},</if>
+            <if test="workWeekEndDate != null">work_week_end_date = #{workWeekEndDate},</if>
+            <if test="employee != null and employee != ''">employee = #{employee},</if>
+            <if test="workCategory != null and workCategory != ''">work_category = #{workCategory},</if>
+            <if test="type != null and type != ''">type = #{type},</if>
+            <if test="item != null">item = #{item},</if>
+            <if test="reporter != null">reporter = #{reporter},</if>
+            <if test="costDepartment != null">cost_department = #{costDepartment},</if>
+            <if test="plannedHours != null">planned_hours = #{plannedHours},</if>
+            <if test="actualHours != null">actual_hours = #{actualHours},</if>
+            update_time = sysdate
+        </set>
+        where id = #{id}
+    </update>
+
+    <!-- 删除工时记录 -->
+    <delete id="deleteWorkHourById" parameterType="Long">
+        delete from work_hour where id = #{id}
+    </delete>
+
+    <!-- 批量删除工时记录 -->
+    <delete id="batchDeleteWorkHour" parameterType="Long[]">
+        delete from work_hour where id in
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+    
+    <!-- 按费用归属部门统计执行工时合计 -->
+    <select id="selectWorkHourStatisticsByCostDepartment" resultType="java.util.Map">
+        select 
+            a.cost_department as cost_department, 
+            sum(a.actual_hours) as total_actual_hours 
+        from 
+            work_hour a 
+        group by 
+            a.cost_department 
+        order by 
+            total_actual_hours desc
+    </select>
+    
+    <!-- 按系统统计执行工时合计 -->
+    <select id="selectWorkHourStatisticsBySystem" resultType="java.util.Map">
+        select 
+            a.system as system, 
+            sum(a.actual_hours) as total_actual_hours 
+        from 
+            work_hour a 
+        group by 
+            a.system 
+        order by 
+            total_actual_hours desc
+    </select>
+    
+    <!-- 按员工统计执行工时合计 -->
+    <select id="selectWorkHourStatisticsByEmployee" resultType="java.util.Map">
+        select 
+            a.employee as employee, 
+            sum(a.actual_hours) as total_actual_hours 
+        from 
+            work_hour a 
+        group by 
+            a.employee 
+        order by 
+            total_actual_hours desc
+    </select>
+    
+    <!-- 按系统和员工统计执行工时合计 -->
+    <select id="selectWorkHourStatisticsBySystemAndEmployee" resultType="java.util.Map">
+        select 
+            a.system as system, 
+            a.employee as employee, 
+            sum(a.actual_hours) as total_actual_hours 
+        from 
+            work_hour a 
+        group by 
+            a.system, a.employee 
+        order by 
+            a.system, total_actual_hours desc
+    </select>
+    
+    <!-- 获取系统发展时间轴数据 -->
+    <select id="selectDevelopmentTimelineBySystem" parameterType="String" resultType="java.util.Map">
+        select 
+            a.employee as employee, 
+            a.item as item, 
+            a.work_week_end_date as work_week_end_date 
+        from 
+            work_hour a 
+        where 
+            a.system = #{system} 
+        order by 
+            a.work_week_end_date asc
+    </select>
+    
+</mapper>

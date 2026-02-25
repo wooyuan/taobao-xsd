@@ -1,0 +1,1179 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <title>员工工时管理</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/static/layui/css/layui.css">
+    <style>
+        body {
+            font-family: "Microsoft YaHei", sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        .header {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .header h1 {
+            color: #333;
+            margin: 0;
+            font-size: 24px;
+        }
+        .section {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .section h2 {
+            color: #333;
+            margin-top: 0;
+            font-size: 18px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        /* 操作按钮样式 */
+        .action-buttons {
+            margin-bottom: 20px;
+            text-align: right;
+        }
+        .btn {
+            display: inline-block;
+            padding: 8px 16px;
+            margin-left: 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+        .btn-primary {
+            background-color: #1E9FFF;
+            color: white;
+        }
+        .btn-primary:hover {
+            background-color: #40a9ff;
+        }
+        .btn-import {
+            background-color: #5FB878;
+            color: white;
+        }
+        .btn-import:hover {
+            background-color: #73d13d;
+        }
+        .btn-delete {
+            background-color: #FF5722;
+            color: white;
+            padding: 4px 8px;
+            font-size: 12px;
+        }
+        .btn-delete:hover {
+            background-color: #ff7a45;
+        }
+        /* 表格样式 */
+        .workhour-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            overflow-x: auto;
+            display: block;
+        }
+        .workhour-table th,
+        .workhour-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+            min-width: 100px;
+        }
+        .workhour-table th {
+            background-color: #f9f9f9;
+            font-weight: bold;
+            color: #333;
+            position: sticky;
+            top: 0;
+        }
+        .workhour-table tr:hover {
+            background-color: #f5f5f5;
+        }
+        /* 导入表单样式 */
+        .import-container {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        .import-box {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            width: 400px;
+            max-width: 90%;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #333;
+        }
+        .file-input {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .form-actions {
+            text-align: right;
+            margin-top: 20px;
+        }
+        /* 导航栏样式 */
+        .nav-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 0;
+            margin-bottom: 24px;
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            border: 1px solid #e8e8e8;
+        }
+        
+        /* 标签页导航样式 */
+        .tab-nav {
+            display: flex;
+            align-items: center;
+            padding-left: 20px;
+            background: linear-gradient(90deg, #f8f9fa 0%, #ffffff 100%);
+            border-radius: 8px 0 0 8px;
+        }
+        
+        .tab-item {
+            padding: 12px 24px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            color: #666666;
+            border: none;
+            background: transparent;
+            position: relative;
+            transition: all 0.3s ease;
+            margin-right: 4px;
+            border-radius: 6px;
+        }
+        
+        .tab-item:hover {
+            color: #1E9FFF;
+            background-color: rgba(30, 159, 255, 0.1);
+            transform: translateY(-1px);
+        }
+        
+        .tab-item.active {
+            color: #1E9FFF;
+            background-color: rgba(30, 159, 255, 0.1);
+            box-shadow: 0 2px 6px rgba(30, 159, 255, 0.2);
+        }
+        
+        .tab-item.active::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 24px;
+            right: 24px;
+            height: 2px;
+            background-color: #1E9FFF;
+            border-radius: 1px;
+        }
+        
+        /* 操作按钮样式优化 */
+        .action-buttons {
+            display: flex;
+            align-items: center;
+            padding-right: 20px;
+            gap: 10px;
+        }
+        
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10px 18px;
+            margin-left: 0;
+            border: 1px solid transparent;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            white-space: nowrap;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+        }
+        
+        .btn-primary {
+            background-color: #1E9FFF;
+            color: white;
+            border-color: #1E9FFF;
+        }
+        
+        .btn-primary:hover {
+            background-color: #40a9ff;
+            border-color: #40a9ff;
+            box-shadow: 0 4px 12px rgba(30, 159, 255, 0.3);
+            transform: translateY(-1px);
+        }
+        
+        .btn-export {
+            background-color: #52c41a;
+            color: white;
+            border-color: #52c41a;
+        }
+        
+        .btn-export:hover {
+            background-color: #73d13d;
+            border-color: #73d13d;
+            box-shadow: 0 4px 12px rgba(82, 196, 26, 0.3);
+            transform: translateY(-1px);
+        }
+        
+        .btn-import {
+            background-color: #722ed1;
+            color: white;
+            border-color: #722ed1;
+        }
+        
+        .btn-import:hover {
+            background-color: #9254de;
+            border-color: #9254de;
+            box-shadow: 0 4px 12px rgba(114, 46, 209, 0.3);
+            transform: translateY(-1px);
+        }
+        
+        .btn-nav {
+            background-color: #f0f2f5;
+            color: #333333;
+            border-color: #d9d9d9;
+        }
+        
+        .btn-nav:hover {
+            background-color: #e6f7ff;
+            color: #1E9FFF;
+            border-color: #91d5ff;
+            transform: translateY(-1px);
+        }
+        
+        .btn-delete {
+            background-color: #FF4D4F;
+            color: white;
+            padding: 6px 12px;
+            font-size: 12px;
+            border-color: #FF4D4F;
+        }
+        
+        .btn-delete:hover {
+            background-color: #ff7875;
+            border-color: #ff7875;
+            box-shadow: 0 4px 12px rgba(255, 77, 79, 0.3);
+        }
+        
+        /* 响应式设计 */
+        @media (max-width: 1200px) {
+            .nav-bar {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 16px;
+            }
+            
+            .tab-nav {
+                padding-left: 12px;
+                padding-right: 12px;
+                justify-content: center;
+                border-radius: 8px;
+            }
+            
+            .action-buttons {
+                padding-left: 12px;
+                padding-right: 12px;
+                justify-content: center;
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+            
+            .tab-item {
+                padding: 10px 16px;
+            }
+            
+            .btn {
+                padding: 8px 14px;
+                font-size: 13px;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .tab-nav {
+                overflow-x: auto;
+                justify-content: flex-start;
+                padding: 8px 12px;
+            }
+            
+            .tab-item {
+                white-space: nowrap;
+            }
+        }
+        
+        /* 分页样式 */
+        .pagination-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin-top: 20px;
+            padding: 15px;
+            background-color: transparent;
+        }
+        
+        .pagination {
+            display: flex;
+            list-style: none;
+            padding: 0;
+            margin: 10px 0 0 0;
+        }
+        
+        .pagination li {
+            margin: 0 5px;
+        }
+        
+        .pagination button {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            background-color: white;
+            color: #333;
+            cursor: pointer;
+            border-radius: 4px;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+        
+        .pagination button:hover {
+            background-color: #f5f5f5;
+            border-color: #1E9FFF;
+        }
+        
+        .pagination button.active {
+            background-color: #1E9FFF;
+            color: white;
+            border-color: #1E9FFF;
+        }
+        
+        .pagination button:disabled {
+            background-color: #f5f5f5;
+            color: #999;
+            cursor: not-allowed;
+            border-color: #ddd;
+        }
+        
+        .pagination-info {
+            margin-bottom: 10px;
+            color: #666;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>员工工时管理</h1>
+        </div>
+
+        <!-- 员工工时管理 -->
+        <div class="section">
+            <!-- TAB页导航和操作按钮 -->
+            <div class="nav-bar">
+                <div class="tab-nav">
+                    <div class="tab-item active" onclick="switchTab('tab1')">员工工时列表</div>
+                    <div class="tab-item" onclick="switchTab('tab2')">部门工时统计</div>
+                    <div class="tab-item" onclick="switchTab('tab3')">系统工时统计</div>
+                    <div class="tab-item" onclick="switchTab('tab4')">员工工时统计</div>
+                    <div class="tab-item" onclick="switchTab('tab5')">系统员工执行工时</div>
+                </div>
+                
+                <div class="action-buttons">
+                    <button class="btn btn-export" onclick="exportAllData()">导出全部数据</button>
+                    <a href="http://cainiao.enjoyme.cn:9214/view/systemInfo" class="btn btn-nav">信息系统管理</a>
+                    <a href="http://cainiao.enjoyme.cn:9214/view/salesReport" class="btn btn-nav">销售数据报表</a>
+                    <a href="/view/workHourStatistics" class="btn btn-nav">系统工时统计</a>
+                    <a href="/view/workHourStatistics/employee" class="btn btn-nav">员工工时统计</a>
+                    <button class="btn btn-import" onclick="openImportForm()">导入工时记录</button>
+                </div>
+            </div>
+            
+            <!-- TAB页内容 -->
+            <!-- 员工工时列表TAB -->
+            <div id="tab1" class="tab-content active">
+                <table class="workhour-table">
+                    <thead>
+                        <tr>
+                            <th>系统</th>
+                            <th>工作月</th>
+                            <th>工作周</th>
+                            <th>员工</th>
+                            <th>工作项类别</th>
+                            <th>类型</th>
+                            <th>事项</th>
+                            <th>提报人</th>
+                            <th>费用归属部门</th>
+                            <th>计划工时</th>
+                            <th>执行工时</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="workhourTableBody">
+                        <!-- 数据将通过JavaScript动态加载 -->
+                    </tbody>
+                </table>
+                <div id="workhourPagination" class="pagination-container"></div>
+            </div>
+            
+            <!-- 部门工时统计TAB -->
+            <div id="tab2" class="tab-content" style="display: none;">
+                <table class="workhour-table">
+                    <thead>
+                        <tr>
+                            <th>费用归属部门</th>
+                            <th>执行工时合计</th>
+                            <th>占比</th>
+                            <th>排名</th>
+                        </tr>
+                    </thead>
+                    <tbody id="departmentStatisticsBody">
+                        <!-- 数据将通过JavaScript动态加载 -->
+                    </tbody>
+                    <tfoot>
+                        <tr class="total-row">
+                            <td>总计</td>
+                            <td id="departmentTotalHours">0.00</td>
+                            <td>100.00%</td>
+                            <td></td>
+                        </tr>
+                    </tfoot>
+                </table>
+                <div id="departmentPagination" class="pagination-container"></div>
+            </div>
+            
+            <!-- 系统工时统计TAB -->
+            <div id="tab3" class="tab-content" style="display: none;">
+                <table class="workhour-table">
+                    <thead>
+                        <tr>
+                            <th>系统</th>
+                            <th>执行工时合计</th>
+                            <th>占比</th>
+                            <th>排名</th>
+                        </tr>
+                    </thead>
+                    <tbody id="systemStatisticsBody">
+                        <!-- 数据将通过JavaScript动态加载 -->
+                    </tbody>
+                    <tfoot>
+                        <tr class="total-row">
+                            <td>总计</td>
+                            <td id="systemTotalHours">0.00</td>
+                            <td>100.00%</td>
+                            <td></td>
+                        </tr>
+                    </tfoot>
+                </table>
+                <div id="systemPagination" class="pagination-container"></div>
+            </div>
+            
+            <!-- 员工工时统计TAB -->
+            <div id="tab4" class="tab-content" style="display: none;">
+                <table class="workhour-table">
+                    <thead>
+                        <tr>
+                            <th>员工</th>
+                            <th>执行工时合计</th>
+                            <th>占比</th>
+                            <th>排名</th>
+                        </tr>
+                    </thead>
+                    <tbody id="employeeStatisticsBody">
+                        <!-- 数据将通过JavaScript动态加载 -->
+                    </tbody>
+                    <tfoot>
+                        <tr class="total-row">
+                            <td>总计</td>
+                            <td id="employeeTotalHours">0.00</td>
+                            <td>100.00%</td>
+                            <td></td>
+                        </tr>
+                    </tfoot>
+                </table>
+                <div id="employeePagination" class="pagination-container"></div>
+            </div>
+            
+            <!-- 系统员工执行工时TAB -->
+            <div id="tab5" class="tab-content" style="display: none;">
+                <table class="workhour-table">
+                    <thead>
+                        <tr>
+                            <th>系统</th>
+                            <th>员工执行工时</th>
+                        </tr>
+                    </thead>
+                    <tbody id="systemEmployeeBody">
+                        <!-- 数据将通过JavaScript动态加载 -->
+                    </tbody>
+                </table>
+                <div id="systemEmployeePagination" class="pagination-container"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 导入表单 -->
+    <div class="import-container" id="importContainer">
+        <div class="import-box">
+            <h3>导入工时记录</h3>
+            <form id="importForm" enctype="multipart/form-data">
+                <div class="form-group">
+                    <label for="importFile">选择文件</label>
+                    <input type="file" id="importFile" name="file" accept=".xls,.xlsx" class="file-input" required>
+                    <small style="color: #666; display: block; margin-top: 5px;">
+                        支持Excel格式（.xls, .xlsx），第一行为表头：系统,工作月,工作周,员工,工作项类别,类型,事项,提报人,费用归属部门,计划工时,执行工时
+                    </small>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn" style="background-color: #909399; color: white;" onclick="closeImportForm()">取消</button>
+                    <button type="submit" class="btn btn-primary">导入</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // 分页相关变量 - 员工工时列表
+        let workhourCurrentPage = 1;
+        let workhourPageSize = 10;
+        let workhourTotalCount = 0;
+        let workhourTotalPages = 0;
+        let workhourFullList = [];
+        
+        // 分页相关变量 - 部门工时统计
+        let departmentCurrentPage = 1;
+        let departmentPageSize = 10;
+        let departmentTotalCount = 0;
+        let departmentTotalPages = 0;
+        let departmentFullList = [];
+        
+        // 分页相关变量 - 系统工时统计
+        let systemCurrentPage = 1;
+        let systemPageSize = 10;
+        let systemTotalCount = 0;
+        let systemTotalPages = 0;
+        let systemFullList = [];
+        
+        // 分页相关变量 - 员工工时统计
+        let employeeCurrentPage = 1;
+        let employeePageSize = 10;
+        let employeeTotalCount = 0;
+        let employeeTotalPages = 0;
+        let employeeFullList = [];
+        
+        // 分页相关变量 - 系统员工执行工时
+        let systemEmployeeCurrentPage = 1;
+        let systemEmployeePageSize = 10;
+        let systemEmployeeTotalCount = 0;
+        let systemEmployeeTotalPages = 0;
+        let systemEmployeeFullList = [];
+        
+        // 页面加载完成后渲染工时记录列表
+        document.addEventListener('DOMContentLoaded', function() {
+            fetchWorkHourList();
+            fetchDepartmentStatistics();
+            fetchSystemStatistics();
+            fetchEmployeeStatistics();
+            fetchSystemEmployeeStatistics();
+        });
+        
+        // TAB切换功能
+        function switchTab(tabId) {
+            // 移除所有tab-item的active类
+            const tabItems = document.querySelectorAll('.tab-item');
+            tabItems.forEach(item => {
+                item.classList.remove('active');
+            });
+            
+            // 添加当前tab-item的active类
+            const activeTabItem = document.querySelector('[onclick="switchTab(\'' + tabId + '\')"]');
+            activeTabItem.classList.add('active');
+            
+            // 隐藏所有tab-content
+            const tabContents = document.querySelectorAll('.tab-content');
+            tabContents.forEach(content => {
+                content.style.display = 'none';
+            });
+            
+            // 显示当前tab-content
+            const activeTabContent = document.getElementById(tabId);
+            activeTabContent.style.display = 'block';
+        }
+        
+        // 渲染分页
+        function renderPagination(containerId, currentPage, totalPages, totalCount, pageSize, callback) {
+            const paginationContainer = document.getElementById(containerId);
+            
+            // 分页信息
+            const paginationInfo = `
+                <div class="pagination-info">
+                    共 ${totalCount} 条记录，第 ${currentPage} 页 / 共 ${totalPages} 页
+                </div>
+            `;
+            
+            // 分页按钮
+            let paginationHtml = '<ul class="pagination">';
+            
+            // 首页按钮
+            paginationHtml += `<li><button onclick="${callback}(1)" ${currentPage === 1 ? 'disabled' : ''}>首页</button></li>`;
+            
+            // 上一页按钮
+            paginationHtml += `<li><button onclick="${callback}(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>上一页</button></li>`;
+            
+            // 页码按钮
+            const startPage = Math.max(1, currentPage - 2);
+            const endPage = Math.min(totalPages, currentPage + 2);
+            
+            for (let i = startPage; i <= endPage; i++) {
+                paginationHtml += `<li><button onclick="${callback}(${i})" ${currentPage === i ? 'class="active"' : ''}>${i}</button></li>`;
+            }
+            
+            // 下一页按钮
+            paginationHtml += `<li><button onclick="${callback}(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>下一页</button></li>`;
+            
+            // 末页按钮
+            paginationHtml += `<li><button onclick="${callback}(${totalPages})" ${currentPage === totalPages ? 'disabled' : ''}>末页</button></li>`;
+            
+            paginationHtml += '</ul>';
+            
+            paginationContainer.innerHTML = paginationInfo + paginationHtml;
+        }
+        
+        // 获取工时记录列表
+        function fetchWorkHourList() {
+            fetch('/api/workHour/list')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.code === 0) {
+                        workhourFullList = data.data;
+                        workhourTotalCount = workhourFullList.length;
+                        workhourTotalPages = Math.ceil(workhourTotalCount / workhourPageSize);
+                        workhourCurrentPage = 1;
+                        renderWorkhourPagination();
+                        renderWorkHourList();
+                    }
+                })
+                .catch(error => {
+                    console.error('获取工时记录列表失败:', error);
+                });
+        }
+        
+        // 渲染工时记录列表
+        function renderWorkHourList() {
+            const startIndex = (workhourCurrentPage - 1) * workhourPageSize;
+            const endIndex = startIndex + workhourPageSize;
+            const currentData = workhourFullList.slice(startIndex, endIndex);
+            
+            const tbody = document.getElementById('workhourTableBody');
+            let html = '';
+            
+            if (currentData.length === 0) {
+                html = '<tr><td colspan="12" style="text-align: center; color: #999; padding: 20px;">暂无工时记录</td></tr>';
+            } else {
+                currentData.forEach(item => {
+                    html += `
+                        <tr>
+                            <td>${item.system || ''}</td>
+                            <td>${item.workMonth || ''}</td>
+                            <td>${item.workWeek || ''}</td>
+                            <td>${item.employee || ''}</td>
+                            <td>${item.workCategory || ''}</td>
+                            <td>${item.type || ''}</td>
+                            <td>${item.item || ''}</td>
+                            <td>${item.reporter || ''}</td>
+                            <td>${item.costDepartment || ''}</td>
+                            <td>${item.plannedHours || ''}</td>
+                            <td>${item.actualHours || ''}</td>
+                            <td>
+                                <button class="btn btn-delete" onclick="deleteWorkHour(${item.id})">删除</button>
+                            </td>
+                        </tr>
+                    `;
+                });
+            }
+            
+            tbody.innerHTML = html;
+        }
+        
+        // 渲染工时记录分页
+        function renderWorkhourPagination() {
+            renderPagination(
+                'workhourPagination',
+                workhourCurrentPage,
+                workhourTotalPages,
+                workhourTotalCount,
+                workhourPageSize,
+                'goToWorkhourPage'
+            );
+        }
+        
+        // 跳转到指定页码 - 工时记录
+        function goToWorkhourPage(page) {
+            if (page < 1 || page > workhourTotalPages) {
+                return;
+            }
+            workhourCurrentPage = page;
+            renderWorkhourPagination();
+            renderWorkHourList();
+        }
+
+        // 打开导入表单
+        function openImportForm() {
+            document.getElementById('importContainer').style.display = 'flex';
+        }
+
+        // 关闭导入表单
+        function closeImportForm() {
+            document.getElementById('importContainer').style.display = 'none';
+            document.getElementById('importForm').reset();
+        }
+
+        // 提交导入表单
+        document.getElementById('importForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            
+            fetch('/api/workHour/import', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.code === 0) {
+                    alert(data.errMsg);
+                    fetchWorkHourList();
+                    fetchDepartmentStatistics();
+                    fetchSystemStatistics();
+                    fetchEmployeeStatistics();
+                    fetchSystemEmployeeStatistics();
+                    closeImportForm();
+                } else {
+                    alert(data.errMsg || '导入失败');
+                }
+            })
+            .catch(error => {
+                console.error('导入失败:', error);
+                alert('导入失败，请重试');
+            });
+        });
+
+        // 删除工时记录
+        function deleteWorkHour(id) {
+            if (confirm('确定要删除这条工时记录吗？')) {
+                fetch(`/api/workHour/delete/${id}`, {
+                    method: 'DELETE'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.code === 0) {
+                        fetchWorkHourList();
+                        fetchDepartmentStatistics();
+                        fetchSystemStatistics();
+                        fetchEmployeeStatistics();
+                        fetchSystemEmployeeStatistics();
+                    } else {
+                        alert(data.errMsg || '删除失败');
+                    }
+                })
+                .catch(error => {
+                    console.error('删除失败:', error);
+                    alert('删除失败，请重试');
+                });
+            }
+        }
+        
+        // 获取部门工时统计数据
+        function fetchDepartmentStatistics() {
+            fetch('/api/workHour/statistics')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.code === 0) {
+                        departmentFullList = data.data;
+                        departmentTotalCount = departmentFullList.length;
+                        departmentTotalPages = Math.ceil(departmentTotalCount / departmentPageSize);
+                        departmentCurrentPage = 1;
+                        renderDepartmentPagination();
+                        renderDepartmentStatistics();
+                    }
+                })
+                .catch(error => {
+                    console.error('获取部门工时统计数据失败:', error);
+                });
+        }
+        
+        // 渲染部门工时统计数据
+        function renderDepartmentStatistics() {
+            const startIndex = (departmentCurrentPage - 1) * departmentPageSize;
+            const endIndex = startIndex + departmentPageSize;
+            const currentData = departmentFullList.slice(startIndex, endIndex);
+            
+            const tbody = document.getElementById('departmentStatisticsBody');
+            let html = '';
+            let totalHours = 0;
+            
+            // 先计算总工时
+            departmentFullList.forEach(item => {
+                const hours = parseFloat(item.TOTAL_ACTUAL_HOURS || 0);
+                totalHours += hours;
+            });
+            
+            if (currentData.length === 0) {
+                html = '<tr><td colspan="4" style="text-align: center; color: #999; padding: 20px;">暂无统计数据</td></tr>';
+            } else {
+                currentData.forEach((item, index) => {
+                    const department = item.COST_DEPARTMENT || '未指定部门';
+                    const hours = parseFloat(item.TOTAL_ACTUAL_HOURS || 0);
+                    const percentage = totalHours > 0 ? (hours / totalHours) * 100 : 0;
+                    const rank = startIndex + index + 1;
+                    
+                    html += `
+                        <tr>
+                            <td>${department}</td>
+                            <td>${hours.toFixed(2)}</td>
+                            <td>${percentage.toFixed(2)}%</td>
+                            <td>${rank}</td>
+                        </tr>
+                    `;
+                });
+            }
+            
+            tbody.innerHTML = html;
+            document.getElementById('departmentTotalHours').textContent = totalHours.toFixed(2);
+        }
+        
+        // 渲染部门工时统计分页
+        function renderDepartmentPagination() {
+            renderPagination(
+                'departmentPagination',
+                departmentCurrentPage,
+                departmentTotalPages,
+                departmentTotalCount,
+                departmentPageSize,
+                'goToDepartmentPage'
+            );
+        }
+        
+        // 跳转到指定页码 - 部门工时统计
+        function goToDepartmentPage(page) {
+            if (page < 1 || page > departmentTotalPages) {
+                return;
+            }
+            departmentCurrentPage = page;
+            renderDepartmentPagination();
+            renderDepartmentStatistics();
+        }
+        
+        // 获取系统工时统计数据
+        function fetchSystemStatistics() {
+            fetch('/api/workHour/statistics/system')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.code === 0) {
+                        systemFullList = data.data;
+                        systemTotalCount = systemFullList.length;
+                        systemTotalPages = Math.ceil(systemTotalCount / systemPageSize);
+                        systemCurrentPage = 1;
+                        renderSystemPagination();
+                        renderSystemStatistics();
+                    }
+                })
+                .catch(error => {
+                    console.error('获取系统工时统计数据失败:', error);
+                });
+        }
+        
+        // 渲染系统工时统计数据
+        function renderSystemStatistics() {
+            const startIndex = (systemCurrentPage - 1) * systemPageSize;
+            const endIndex = startIndex + systemPageSize;
+            const currentData = systemFullList.slice(startIndex, endIndex);
+            
+            const tbody = document.getElementById('systemStatisticsBody');
+            let html = '';
+            let totalHours = 0;
+            
+            // 先计算总工时
+            systemFullList.forEach(item => {
+                const hours = parseFloat(item.TOTAL_ACTUAL_HOURS || 0);
+                totalHours += hours;
+            });
+            
+            if (currentData.length === 0) {
+                html = '<tr><td colspan="4" style="text-align: center; color: #999; padding: 20px;">暂无统计数据</td></tr>';
+            } else {
+                currentData.forEach((item, index) => {
+                    const system = item.SYSTEM || '未指定系统';
+                    const hours = parseFloat(item.TOTAL_ACTUAL_HOURS || 0);
+                    const percentage = totalHours > 0 ? (hours / totalHours) * 100 : 0;
+                    const rank = startIndex + index + 1;
+                    
+                    html += `
+                        <tr>
+                            <td>${system}</td>
+                            <td>${hours.toFixed(2)}</td>
+                            <td>${percentage.toFixed(2)}%</td>
+                            <td>${rank}</td>
+                        </tr>
+                    `;
+                });
+            }
+            
+            tbody.innerHTML = html;
+            document.getElementById('systemTotalHours').textContent = totalHours.toFixed(2);
+        }
+        
+        // 渲染系统工时统计分页
+        function renderSystemPagination() {
+            renderPagination(
+                'systemPagination',
+                systemCurrentPage,
+                systemTotalPages,
+                systemTotalCount,
+                systemPageSize,
+                'goToSystemPage'
+            );
+        }
+        
+        // 跳转到指定页码 - 系统工时统计
+        function goToSystemPage(page) {
+            if (page < 1 || page > systemTotalPages) {
+                return;
+            }
+            systemCurrentPage = page;
+            renderSystemPagination();
+            renderSystemStatistics();
+        }
+        
+        // 获取员工工时统计数据
+        function fetchEmployeeStatistics() {
+            fetch('/api/workHour/statistics/employee')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.code === 0) {
+                        employeeFullList = data.data;
+                        employeeTotalCount = employeeFullList.length;
+                        employeeTotalPages = Math.ceil(employeeTotalCount / employeePageSize);
+                        employeeCurrentPage = 1;
+                        renderEmployeePagination();
+                        renderEmployeeStatistics();
+                    }
+                })
+                .catch(error => {
+                    console.error('获取员工工时统计数据失败:', error);
+                });
+        }
+        
+        // 渲染员工工时统计数据
+        function renderEmployeeStatistics() {
+            const startIndex = (employeeCurrentPage - 1) * employeePageSize;
+            const endIndex = startIndex + employeePageSize;
+            const currentData = employeeFullList.slice(startIndex, endIndex);
+            
+            const tbody = document.getElementById('employeeStatisticsBody');
+            let html = '';
+            let totalHours = 0;
+            
+            // 先计算总工时
+            employeeFullList.forEach(item => {
+                const hours = parseFloat(item.TOTAL_ACTUAL_HOURS || 0);
+                totalHours += hours;
+            });
+            
+            if (currentData.length === 0) {
+                html = '<tr><td colspan="4" style="text-align: center; color: #999; padding: 20px;">暂无统计数据</td></tr>';
+            } else {
+                currentData.forEach((item, index) => {
+                    const employee = item.EMPLOYEE || '未指定员工';
+                    const hours = parseFloat(item.TOTAL_ACTUAL_HOURS || 0);
+                    const percentage = totalHours > 0 ? (hours / totalHours) * 100 : 0;
+                    const rank = startIndex + index + 1;
+                    
+                    html += `
+                        <tr>
+                            <td>${employee}</td>
+                            <td>${hours.toFixed(2)}</td>
+                            <td>${percentage.toFixed(2)}%</td>
+                            <td>${rank}</td>
+                        </tr>
+                    `;
+                });
+            }
+            
+            tbody.innerHTML = html;
+            document.getElementById('employeeTotalHours').textContent = totalHours.toFixed(2);
+        }
+        
+        // 渲染员工工时统计分页
+        function renderEmployeePagination() {
+            renderPagination(
+                'employeePagination',
+                employeeCurrentPage,
+                employeeTotalPages,
+                employeeTotalCount,
+                employeePageSize,
+                'goToEmployeePage'
+            );
+        }
+        
+        // 跳转到指定页码 - 员工工时统计
+        function goToEmployeePage(page) {
+            if (page < 1 || page > employeeTotalPages) {
+                return;
+            }
+            employeeCurrentPage = page;
+            renderEmployeePagination();
+            renderEmployeeStatistics();
+        }
+        
+        // 获取系统员工执行工时数据
+        function fetchSystemEmployeeStatistics() {
+            fetch('/api/workHour/statistics/systemEmployee')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.code === 0) {
+                        systemEmployeeFullList = data.data;
+                        // 按系统分组
+                        const systemGroups = {};
+                        systemEmployeeFullList.forEach(item => {
+                            const system = item.SYSTEM || '未指定系统';
+                            if (!systemGroups[system]) {
+                                systemGroups[system] = [];
+                            }
+                            systemGroups[system].push(item);
+                        });
+                        
+                        // 转换为系统列表
+                        const systemList = Object.keys(systemGroups).map(system => {
+                            return {
+                                system: system,
+                                employees: systemGroups[system]
+                            };
+                        });
+                        
+                        systemEmployeeFullList = systemList;
+                        systemEmployeeTotalCount = systemEmployeeFullList.length;
+                        systemEmployeeTotalPages = Math.ceil(systemEmployeeTotalCount / systemEmployeePageSize);
+                        systemEmployeeCurrentPage = 1;
+                        renderSystemEmployeePagination();
+                        renderSystemEmployeeStatistics();
+                    }
+                })
+                .catch(error => {
+                    console.error('获取系统员工执行工时数据失败:', error);
+                });
+        }
+        
+        // 渲染系统员工执行工时数据
+        function renderSystemEmployeeStatistics() {
+            const startIndex = (systemEmployeeCurrentPage - 1) * systemEmployeePageSize;
+            const endIndex = startIndex + systemEmployeePageSize;
+            const currentData = systemEmployeeFullList.slice(startIndex, endIndex);
+            
+            const tbody = document.getElementById('systemEmployeeBody');
+            let html = '';
+            
+            if (currentData.length === 0) {
+                html = '<tr><td colspan="2" style="text-align: center; color: #999; padding: 20px;">暂无统计数据</td></tr>';
+            } else {
+                currentData.forEach(item => {
+                    const system = item.system;
+                    const employees = item.employees;
+                    
+                    // 计算系统总工时
+                    const systemTotalHours = employees.reduce((sum, empItem) => {
+                        return sum + parseFloat(empItem.TOTAL_ACTUAL_HOURS || 0);
+                    }, 0);
+                    
+                    // 系统行
+                    html += `<tr>`;
+                    html += `<td style="font-weight: bold; color: red; width: 150px;">${system}</td>`;
+                    
+                    // 员工信息列
+                    let employeesHtml = '';
+                    employees.forEach((empItem, index) => {
+                        const employee = empItem.EMPLOYEE || '未指定员工';
+                        const hours = parseFloat(empItem.TOTAL_ACTUAL_HOURS || 0);
+                        const percentage = systemTotalHours > 0 ? (hours / systemTotalHours) * 100 : 0;
+                        
+                        if (index > 0) {
+                            employeesHtml += ' ';
+                        }
+                        employeesHtml += `<span>${employee} ${hours.toFixed(0)}/${percentage.toFixed(0)}%</span>`;
+                    });
+                    
+                    html += `<td>${employeesHtml}</td>`;
+                    html += `</tr>`;
+                });
+            }
+            
+            tbody.innerHTML = html;
+        }
+        
+        // 渲染系统员工执行工时分页
+        function renderSystemEmployeePagination() {
+            renderPagination(
+                'systemEmployeePagination',
+                systemEmployeeCurrentPage,
+                systemEmployeeTotalPages,
+                systemEmployeeTotalCount,
+                systemEmployeePageSize,
+                'goToSystemEmployeePage'
+            );
+        }
+        
+        // 跳转到指定页码 - 系统员工执行工时
+        function goToSystemEmployeePage(page) {
+            if (page < 1 || page > systemEmployeeTotalPages) {
+                return;
+            }
+            systemEmployeeCurrentPage = page;
+            renderSystemEmployeePagination();
+            renderSystemEmployeeStatistics();
+        }
+        
+        // 导出全部数据功能
+        function exportAllData() {
+            window.location.href = '/api/workHour/exportAllData';
+        }
+    </script>
+</body>
+</html>

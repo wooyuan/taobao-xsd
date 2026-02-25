@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>数据分析仪表盘</title>
+        <!-- Tailwind CSS -->
+        <script src="https://cdn.tailwindcss.com"></script>
+        <!-- Font Awesome -->
+        <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+        <!-- Chart.js (使用更可靠的CDN) -->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.8/chart.umd.min.js" integrity="sha512-vYulHoXqgB/xzSbSDI6eQU1X4Z0CY0kIAdJ+mJRYbI3zqOZ0bQw+3gJzS5JcGRX9p70iXBZXH3+mxvUYr08yQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+        
+        <!-- 配置Tailwind自定义主题 -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#165DFF',
+                        success: '#00B42A',
+                        warning: '#FF7D00',
+                        danger: '#F53F3F',
+                        info: '#86909C',
+                        bg: '#F2F3F5',
+                        card: '#FFFFFF',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .card-shadow {
+                box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            }
+            .hover-scale {
+                transition: transform 0.2s ease-in-out;
+            }
+            .hover-scale:hover {
+                transform: scale(1.02);
+            }
+            .gradient-bg {
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            }
+            /* 添加动画效果 */
+            .transition-all-300 {
+                transition: all 0.3s ease;
+            }
+            .hover-scale-up {
+                transition: transform 0.3s ease;
+            }
+            .hover-scale-up:hover {
+                transform: translateY(-2px);
+            }
+            .btn-transition {
+                transition: all 0.2s ease;
+            }
+            .btn-transition:hover:not(:disabled) {
+                opacity: 0.9;
+                transform: translateY(-1px);
+            }
+            .btn-transition:active:not(:disabled) {
+                transform: translateY(0);
+            }
+            .card-animation {
+                transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            }
+            .card-animation:hover {
+                box-shadow: 0 8px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            }
+            .fade-in {
+                animation: fadeIn 0.6s ease-in-out;
+            }
+            @keyframes fadeIn {
+                from {
+                    opacity: 0;
+                    transform: translateY(10px);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+            .pulse {
+                animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+            }
+            @keyframes pulse {
+                0%, 100% {
+                    opacity: 1;
+                }
+                50% {
+                    opacity: 0.7;
+                }
+            }
+            .number-count {
+                animation: countUp 1.5s ease-out;
+            }
+            @keyframes countUp {
+                from {
+                    opacity: 0;
+                    transform: translateY(10px);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+        }
+    </style>
+</head>
+<body class="bg-bg text-gray-800 min-h-screen">
+    <div class="container mx-auto px-4 py-6">
+        <header class="mb-6">
+            <h1 class="text-2xl font-bold text-gray-800">物流分析仪表盘</h1>
+        </header>
+        
+        <!-- 主内容区域将在这里实现 -->
+        <main>
+            <!-- 顶部指标卡片区域 -->
+            <section id="metrics-section" class="mb-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <!-- 订单总量卡片 -->
+                <div class="bg-card rounded-lg p-5 card-shadow hover-scale card-animation fade-in" style="animation-delay: 0.1s">
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <h3 class="text-sm font-medium text-gray-500">订单</h3>
+                            <h2 class="text-2xl font-bold text-gray-800 number-count">126,560</h2>
+                        </div>
+                        <button class="text-gray-400 hover:text-gray-600">
+                            <i class="fa fa-cog"></i>
+                        </button>
+                    </div>
+                    <div class="flex items-center text-sm">
+                        <span class="text-danger mr-2">
+                            <i class="fa fa-arrow-up"></i> 1000
+                        </span>
+                        <span class="text-gray-500">已发量</span>
+                        <span class="text-success ml-4 mr-2">
+                            <i class="fa fa-arrow-up"></i> 1000
+                        </span>
+                        <span class="text-gray-500">未发量</span>
+                    </div>
+                    <div class="mt-4 text-sm text-gray-500">
+                        日销售额 ¥ 12,423
+                    </div>
+                </div>
+                
+                <!-- 访问量卡片 -->
+                <div class="bg-card rounded-lg p-5 card-shadow hover-scale card-animation fade-in" style="animation-delay: 0.2s">
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <h3 class="text-sm font-medium text-gray-500">未分配量</h3>
+                            <h2 class="text-2xl font-bold text-gray-800 number-count">8,846</h2>
+                        </div>
+                        <button class="text-gray-400 hover:text-gray-600">
+                            <i class="fa fa-cog"></i>
+                        </button>
+                    </div>
+                    <div class="h-16 flex items-center justify-center">
+                        <canvas id="visitors-chart"></canvas>
+                    </div>
+                    <div class="mt-4 text-sm text-gray-500">
+                        已分配量 1,234
+                    </div>
+                </div>
+                
+                <!-- 支付笔数卡片 -->
+                <div class="bg-card rounded-lg p-5 card-shadow hover-scale card-animation fade-in" style="animation-delay: 0.3s">
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <h3 class="text-sm font-medium text-gray-500">支付笔数</h3>
+                            <h2 class="text-2xl font-bold text-gray-800 number-count">6,560</h2>
+                        </div>
+                        <button class="text-gray-400 hover:text-gray-600">
+                            <i class="fa fa-cog"></i>
+                        </button>
+                    </div>
+                    <div class="h-16 flex items-center justify-center">
+                        <canvas id="payment-chart"></canvas>
+                    </div>
+                    <div class="mt-4 text-sm text-gray-500">
+                        转化率 60%
+                    </div>
+                </div>
+                
+                <!-- 运营活动效果卡片 -->
+                <!-- <div class="bg-card rounded-lg p-5 card-shadow hover-scale card-animation fade-in" style="animation-delay: 0.4s">
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <h3 class="text-sm font-medium text-gray-500">运营活动效果</h3>
+                            <h2 class="text-2xl font-bold text-gray-800 number-count">78%</h2>
+                        </div>
+                        <button class="text-gray-400 hover:text-gray-600">
+                            <i class="fa fa-cog"></i>
+                        </button>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-2.5 mb-2">
+                        <div class="bg-gradient-to-r from-primary to-success h-2.5 rounded-full" style="width: 78%"></div>
+                    </div>
+                    <div class="flex items-center text-sm">
+                        <span class="text-danger mr-2">
+                            <i class="fa fa-arrow-up"></i> 12%
+                        </span>
+                        <span class="text-gray-500">周同比</span>
+                        <span class="text-success ml-4 mr-2">
+                            <i class="fa fa-arrow-up"></i> 11%
+                        </span>
+                        <span class="text-gray-500">日同比</span>
+                    </div>
+                </div> -->
+            </section>
+            
+            <!-- 中部图表区域 -->
+            <section id="charts-section" class="mb-6 grid grid-cols-1 lg:grid-cols-3 gap-4">
+                <!-- 销售额图表 -->
+                <div class="bg-card rounded-lg p-5 card-shadow col-span-1 lg:col-span-2 card-animation fade-in" style="animation-delay: 0.5s">
+                    <div class="flex flex-wrap justify-between items-center mb-4">
+                        <div class="flex mb-2 lg:mb-0">
+                            <button class="px-3 py-1 text-sm font-medium text-primary bg-primary/10 rounded-md mr-2 btn-transition">
+                                销售额
+                            </button>
+                            <button class="px-3 py-1 text-sm font-medium text-gray-500 hover:bg-gray-100 rounded-md btn-transition">
+                                访问量
+                            </button>
+                        </div>
+                        
+                        <div class="flex items-center space-x-2">
+                            <button class="px-3 py-1 text-sm font-medium text-gray-500 hover:bg-gray-100 rounded-md btn-transition">
+                                    今日
+                                </button>
+                                <button class="px-3 py-1 text-sm font-medium text-gray-500 hover:bg-gray-100 rounded-md btn-transition">
+                                    本周
+                                </button>
+                                <button class="px-3 py-1 text-sm font-medium text-gray-500 hover:bg-gray-100 rounded-md btn-transition">
+                                    本月
+                                </button>
+                                <button class="px-3 py-1 text-sm font-medium text-primary bg-primary/10 rounded-md btn-transition">
+                                    本年
+                                </button>
+                            <div class="relative">
+                                <input type="text" value="2025-01-01 → 2025-12-31" 
+                                    class="px-3 py-1 text-sm border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50">
+                                <i class="fa fa-calendar absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="h-64">
+                        <canvas id="sales-chart"></canvas>
+                    </div>
+                </div>
+                
+                <!-- 门店发货排名 -->
+                <div class="bg-card rounded-lg p-5 card-shadow card-animation fade-in" style="animation-delay: 0.6s">
+                    <h3 class="text-base font-medium text-gray-800 mb-4">门店发货排名</h3>
+                    <div class="space-y-4">
+                        <div class="flex items-center p-2 rounded-lg hover:bg-gray-50 transition-all-300">
+                            <span class="flex items-center justify-center w-6 h-6 text-sm font-bold text-white bg-primary rounded-full mr-3">1</span>
+                            <span class="flex-1 text-gray-700">工专路0号店</span>
+                            <span class="font-medium text-gray-800">323,234</span>
+                        </div>
+                        <div class="flex items-center">
+                            <span class="flex items-center justify-center w-6 h-6 text-sm font-bold text-white bg-primary/80 rounded-full mr-3">2</span>
+                            <span class="flex-1 text-gray-700">工专路1号店</span>
+                            <span class="font-medium text-gray-800">323,234</span>
+                        </div>
+                        <div class="flex items-center">
+                            <span class="flex items-center justify-center w-6 h-6 text-sm font-bold text-white bg-primary/60 rounded-full mr-3">3</span>
+                            <span class="flex-1 text-gray-700">工专路2号店</span>
+                            <span class="font-medium text-gray-800">323,234</span>
+                        </div>
+                        <div class="flex items-center">
+                            <span class="flex items-center justify-center w-6 h-6 text-sm font-medium bg-gray-200 rounded-full mr-3">4</span>
+                            <span class="flex-1 text-gray-700">工专路3号店</span>
+                            <span class="font-medium text-gray-800">323,234</span>
+                        </div>
+                        <div class="flex items-center">
+                            <span class="flex items-center justify-center w-6 h-6 text-sm font-medium bg-gray-200 rounded-full mr-3">5</span>
+                            <span class="flex-1 text-gray-700">工专路4号店</span>
+                            <span class="font-medium text-gray-800">323,234</span>
+                        </div>
+                        <div class="flex items-center">
+                            <span class="flex items-center justify-center w-6 h-6 text-sm font-medium bg-gray-200 rounded-full mr-3">6</span>
+                            <span class="flex-1 text-gray-700">工专路5号店</span>
+                            <span class="font-medium text-gray-800">323,234</span>
+                        </div>
+                        <div class="flex items-center">
+                            <span class="flex items-center justify-center w-6 h-6 text-sm font-medium bg-gray-200 rounded-full mr-3">7</span>
+                            <span class="flex-1 text-gray-700">工专路6号店</span>
+                            <span class="font-medium text-gray-800">323,234</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- 底部数据展示区域 -->
+            <section id="data-section" class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <!-- 线上热门搜索 -->
+                <div class="bg-card rounded-lg p-5 card-shadow card-animation fade-in" style="animation-delay: 0.7s">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-base font-medium text-gray-800">线上热门搜索</h3>
+                        <button class="text-gray-400 hover:text-gray-600">
+                            <i class="fa fa-ellipsis-h"></i>
+                        </button>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4 mb-6">
+                        <div>
+                            <div class="text-sm text-gray-500 mb-1">搜索用户数</div>
+                            <div class="flex items-center p-2 rounded-lg hover:bg-gray-50 transition-all-300">
+                                <span class="text-xl font-bold text-gray-800 number-count">17.1</span>
+                                <span class="ml-2 text-success text-sm">
+                                    <i class="fa fa-arrow-up"></i>
+                                </span>
+                            </div>
+                            <div class="h-16 mt-2">
+                                <canvas id="search-users-chart"></canvas>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="text-sm text-gray-500 mb-1">人均搜索次数</div>
+                            <div class="flex items-center">
+                                <span class="text-xl font-bold text-gray-800 number-count">26.2</span>
+                                <span class="ml-2 text-danger text-sm">
+                                    <i class="fa fa-arrow-down"></i>
+                                </span>
+                            </div>
+                            <div class="h-16 mt-2">
+                                <canvas id="avg-searches-chart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 搜索关键词表格 -->
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full">
+                            <thead>
+                                <tr class="text-left text-sm text-gray-500 border-b border-gray-200">
+                                    <th class="pb-3 font-medium">排名</th>
+                                    <th class="pb-3 font-medium">搜索关键词</th>
+                                    <th class="pb-3 font-medium">用户数</th>
+                                    <th class="pb-3 font-medium">
+                                        <div class="flex items-center">
+                                            周涨幅
+                                            <i class="fa fa-sort ml-1 text-gray-400"></i>
+                                        </div>
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="text-sm border-b border-gray-100 hover:bg-gray-50 transition-all-300">
+                                    <td class="py-3">1</td>
+                                    <td class="py-3 text-gray-700">搜索关键词-0</td>
+                                    <td class="py-3">83</td>
+                                    <td class="py-3 text-success">
+                                        <i class="fa fa-arrow-up"></i> 7%
+                                    </td>
+                                </tr>
+                                <tr class="text-sm border-b border-gray-100 hover:bg-gray-50">
+                                    <td class="py-3">2</td>
+                                    <td class="py-3 text-gray-700">搜索关键词-1</td>
+                                    <td class="py-3">751</td>
+                                    <td class="py-3 text-danger">
+                                        <i class="fa fa-arrow-down"></i> 91%
+                                    </td>
+                                </tr>
+                                <tr class="text-sm border-b border-gray-100 hover:bg-gray-50">
+                                    <td class="py-3">3</td>
+                                    <td class="py-3 text-gray-700">搜索关键词-2</td>
+                                    <td class="py-3">343</td>
+                                    <td class="py-3 text-danger">
+                                        <i class="fa fa-arrow-down"></i> 99%
+                                    </td>
+                                </tr>
+                                <tr class="text-sm border-b border-gray-100 hover:bg-gray-50">
+                                    <td class="py-3">4</td>
+                                    <td class="py-3 text-gray-700">搜索关键词-3</td>
+                                    <td class="py-3">33</td>
+                                    <td class="py-3 text-success">
+                                        <i class="fa fa-arrow-up"></i> 18%
+                                    </td>
+                                </tr>
+                                <tr class="text-sm hover:bg-gray-50 transition-all-300">
+                                    <td class="py-3">5</td>
+                                    <td class="py-3 text-gray-700">搜索关键词-4</td>
+                                    <td class="py-3">204</td>
+                                    <td class="py-3 text-success">
+                                        <i class="fa fa-arrow-up"></i> 5%
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <!-- 分页 -->
+                    <div class="flex justify-center mt-4">
+                        <nav class="flex items-center space-x-1">
+                            <button class="w-8 h-8 flex items-center justify-center rounded-md text-gray-500 hover:bg-gray-100">
+                                <i class="fa fa-angle-left"></i>
+                            </button>
+                            <button class="w-8 h-8 flex items-center justify-center rounded-md bg-primary text-white btn-transition">1</button>
+                                <button class="w-8 h-8 flex items-center justify-center rounded-md text-gray-700 hover:bg-gray-100 btn-transition">2</button>
+                                <button class="w-8 h-8 flex items-center justify-center rounded-md text-gray-700 hover:bg-gray-100 btn-transition">3</button>
+                                <button class="w-8 h-8 flex items-center justify-center rounded-md text-gray-700 hover:bg-gray-100 btn-transition">4</button>
+                                <button class="w-8 h-8 flex items-center justify-center rounded-md text-gray-700 hover:bg-gray-100 btn-transition">5</button>
+                            <button class="w-8 h-8 flex items-center justify-center rounded-md text-gray-500">...</button>
+                            <button class="w-8 h-8 flex items-center justify-center rounded-md text-gray-700 hover:bg-gray-100 btn-transition">10</button>
+                            <button class="w-8 h-8 flex items-center justify-center rounded-md text-gray-500 hover:bg-gray-100">
+                                <i class="fa fa-angle-right"></i>
+                            </button>
+                        </nav>
+                    </div>
+                </div>
+                
+                <!-- 销售额类别占比 -->
+                <div class="bg-card rounded-lg p-5 card-shadow card-animation fade-in" style="animation-delay: 0.8s">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-base font-medium text-gray-800">销售额类别占比</h3>
+                        <div class="flex space-x-2">
+                            <button class="px-3 py-1 text-sm font-medium text-primary bg-primary/10 rounded-md btn-transition">
+                                全部渠道
+                            </button>
+                            <button class="px-3 py-1 text-sm font-medium text-gray-500 hover:bg-gray-100 rounded-md btn-transition">
+                                线上
+                            </button>
+                            <button class="px-3 py-1 text-sm font-medium text-gray-500 hover:bg-gray-100 rounded-md btn-transition">
+                                门店
+                            </button>
+                            <button class="text-gray-400 hover:text-gray-600">
+                                <i class="fa fa-cog"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="flex flex-col lg:flex-row items-center justify-center lg:justify-between">
+                        <div class="w-64 h-64 mb-6 lg:mb-0 hover-scale-up">
+                            <canvas id="category-chart"></canvas>
+                        </div>
+                        
+                        <div class="space-y-2">
+                            <div class="flex items-center">
+                                <span class="w-3 h-3 rounded-full bg-purple-500 mr-2"></span>
+                                <span class="flex-1 text-sm text-gray-700">服饰箱包</span>
+                                <span class="font-medium">255</span>
+                            </div>
+                            <div class="flex items-center">
+                                <span class="w-3 h-3 rounded-full bg-orange-500 mr-2"></span>
+                                <span class="flex-1 text-sm text-gray-700">个护健康</span>
+                                <span class="font-medium">344</span>
+                            </div>
+                            <div class="flex items-center">
+                                <span class="w-3 h-3 rounded-full bg-teal-500 mr-2"></span>
+                                <span class="flex-1 text-sm text-gray-700">食用酒水</span>
+                                <span class="font-medium">188</span>
+                            </div>
+                            <div class="flex items-center">
+                                <span class="w-3 h-3 rounded-full bg-blue-500 mr-2"></span>
+                                <span class="flex-1 text-sm text-gray-700">家用电器</span>
+                                <span class="font-medium">99</span>
+                            </div>
+                            <div class="flex items-center">
+                                <span class="w-3 h-3 rounded-full bg-indigo-500 mr-2"></span>
+                                <span class="flex-1 text-sm text-gray-700">其他</span>
+                                <span class="font-medium">65</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+    
+    <script>
+        /**
+         * 仪表盘数据可视化脚本
+         * 负责初始化页面上所有的图表和交互功能
+         */
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Dashboard loaded and initialized');
+            
+            // 图表配置常量
+            const CHART_COLORS = {
+                primary: '#165DFF',
+                success: '#00B42A',
+                warning: '#FF7D00',
+                danger: '#F53F3F',
+                info: '#86909C',
+                gray: 'rgba(145, 158, 171, 0.3)',
+                grayLight: 'rgba(145, 158, 171, 0.1)'
+            };
+            
+            // 迷你图表通用配置
+            const miniChartConfig = {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: { x: { display: false }, y: { display: false } },
+                elements: { line: { tension: 0.4 } }
+            };
+            
+            // 工具函数：初始化迷你折线图
+            function initMiniLineChart(chartId, data, borderColor, backgroundColor) {
+                const ctx = document.getElementById(chartId).getContext('2d');
+                return new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: Array(7).fill(''), // 7个空标签，代表7天
+                        datasets: [{
+                            data: data,
+                            borderColor: borderColor,
+                            backgroundColor: backgroundColor,
+                            borderWidth: 2,
+                            fill: true,
+                            tension: 0.4,
+                            pointRadius: 0 // 隐藏数据点
+                        }]
+                    },
+                    options: miniChartConfig
+                });
+            }
+            
+            // 初始化访问量曲线图
+            initMiniLineChart(
+                'visitors-chart',
+                [65, 78, 52, 91, 83, 65, 92],
+                CHART_COLORS.gray,
+                CHART_COLORS.grayLight
+            );
+            
+            // 初始化支付笔数柱状图
+            function initPaymentChart() {
+                const ctx = document.getElementById('payment-chart').getContext('2d');
+                return new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: Array(7).fill(''),
+                        datasets: [{
+                            data: [30, 40, 35, 45, 40, 30, 45],
+                            backgroundColor: CHART_COLORS.primary,
+                            borderRadius: 2
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: { x: { display: false }, y: { display: false } }
+                    }
+                });
+            }
+            
+            initPaymentChart();
+            
+            // 初始化销售额柱状图
+            function initSalesChart() {
+                const ctx = document.getElementById('sales-chart').getContext('2d');
+                return new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'],
+                        datasets: [{
+                            label: '销售额',
+                            data: [900, 1100, 280, 600, 600, 600, 850, 450, 280, 700, 700, 700],
+                            backgroundColor: CHART_COLORS.primary,
+                            borderRadius: 4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                backgroundColor: 'rgba(0, 0, 0, 0.7)',
+                                padding: 12,
+                                cornerRadius: 6
+                            }
+                        },
+                        scales: {
+                            x: {
+                                grid: { display: false },
+                                ticks: {
+                                    color: '#86909C',
+                                    font: { size: 12 }
+                                }
+                            },
+                            y: {
+                                grid: {
+                                    color: 'rgba(0, 0, 0, 0.05)'
+                                },
+                                ticks: {
+                                    color: '#86909C',
+                                    font: { size: 12 }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+            
+            initSalesChart();
+            
+            // 初始化底部区域的迷你图表
+            // 搜索用户数折线图
+            initMiniLineChart(
+                'search-users-chart',
+                [12, 15, 10, 18, 16, 14, 17],
+                CHART_COLORS.success,
+                'rgba(0, 180, 42, 0.1)'
+            );
+            
+            // 人均搜索次数折线图
+            initMiniLineChart(
+                'avg-searches-chart',
+                [30, 28, 26, 24, 22, 25, 26],
+                CHART_COLORS.danger,
+                'rgba(245, 63, 63, 0.1)'
+            );
+            
+            // 初始化销售额类别占比饼图
+            function initCategoryChart() {
+                const ctx = document.getElementById('category-chart').getContext('2d');
+                const categoryColors = [
+                    '#9333EA', // 紫色 - 服饰箱包
+                    '#F97316', // 橙色 - 个护健康
+                    '#14B8A6', // 青色 - 食用酒水
+                    '#3B82F6', // 蓝色 - 家用电器
+                    '#6366F1'  // 靛蓝色 - 其他
+                ];
+                
+                return new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['服饰箱包', '个护健康', '食用酒水', '家用电器', '其他'],
+                        datasets: [{
+                            data: [255, 344, 188, 99, 65],
+                            backgroundColor: categoryColors,
+                            borderWidth: 0,
+                            borderRadius: 4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                backgroundColor: 'rgba(0, 0, 0, 0.7)',
+                                padding: 12,
+                                cornerRadius: 6,
+                                callbacks: {
+                                    label: function(context) {
+                                        const label = context.label || '';
+                                        const value = context.parsed || 0;
+                                        return `${label}: ${value}`;
+                                    }
+                                }
+                            }
+                        },
+                        cutout: '60%'
+                    }
+                });
+            }
+            
+            initCategoryChart();
+            
+            // 数值增长动画函数
+            function animateNumber(element, targetValue, duration = 1500) {
+                let startValue = 0;
+                const startTime = performance.now();
+                const isCurrency = element.textContent.includes('¥');
+                const isPercentage = element.textContent.includes('%');
+                const isInteger = !element.textContent.includes('.');
+                
+                function updateNumber(currentTime) {
+                    const elapsedTime = currentTime - startTime;
+                    const progress = Math.min(elapsedTime / duration, 1);
+                    
+                    // 使用缓动函数让动画更自然
+                    const easeOutQuart = 1 - Math.pow(1 - progress, 4);
+                    const currentValue = startValue + (targetValue - startValue) * easeOutQuart;
+                    
+                    // 根据数值类型进行格式化
+                    let formattedValue;
+                    if (isCurrency) {
+                        formattedValue = '¥' + formatNumber(currentValue, isInteger ? 0 : 2);
+                    } else if (isPercentage) {
+                        formattedValue = currentValue.toFixed(isInteger ? 0 : 1) + '%';
+                    } else {
+                        formattedValue = formatNumber(currentValue, isInteger ? 0 : 1);
+                    }
+                    
+                    element.textContent = formattedValue;
+                    
+                    if (progress < 1) {
+                        requestAnimationFrame(updateNumber);
+                    }
+                }
+                
+                // 启动动画
+                requestAnimationFrame(updateNumber);
+            }
+            
+            // 数字格式化函数（添加千位分隔符）
+            function formatNumber(num, decimals = 0) {
+                return num.toLocaleString('zh-CN', {
+                    minimumFractionDigits: decimals,
+                    maximumFractionDigits: decimals
+                });
+            }
+            
+            // 初始化数值增长动画
+            function initNumberAnimations() {
+                const animatedElements = document.querySelectorAll('.number-count');
+                
+                animatedElements.forEach(element => {
+                    // 从元素中提取目标数值
+                    let targetValue = parseFloat(element.textContent.replace(/[^\d.-]/g, ''));
+                    
+                    // 为了动画效果，先将显示设置为0
+                    const originalText = element.textContent;
+                    const isCurrency = originalText.includes('¥');
+                    const isPercentage = originalText.includes('%');
+                    
+                    element.textContent = isCurrency ? '¥0' : isPercentage ? '0%' : '0';
+                    
+                    // 延迟启动动画，创造错开的视觉效果
+                    const delay = Math.random() * 0.5; // 0-0.5秒的随机延迟
+                    setTimeout(() => {
+                        animateNumber(element, targetValue);
+                    }, delay * 1000);
+                });
+            }
+            
+            // 为按钮添加交互功能
+            function initButtonInteractions() {
+                const buttons = document.querySelectorAll('.btn-transition');
+                buttons.forEach(button => {
+                    // 已有的悬停和点击效果通过CSS实现
+                    // 这里可以添加额外的JS交互逻辑
+                });
+            }
+            
+            // 初始化所有交互功能
+            initButtonInteractions();
+            
+            // 启动数值增长动画
+            initNumberAnimations();
+        });
+    </script>
+</body>
+</html>

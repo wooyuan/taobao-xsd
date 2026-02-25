@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSV导入 - 客户积分数据</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 30px;
+            font-size: 24px;
+        }
+
+        .file-upload {
+            border: 2px dashed #3498db;
+            border-radius: 8px;
+            padding: 40px;
+            text-align: center;
+            margin-bottom: 30px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .file-upload:hover {
+            border-color: #2980b9;
+            background-color: #f8f9fa;
+        }
+
+        .file-upload.dragover {
+            border-color: #27ae60;
+            background-color: #e8f5e8;
+        }
+
+        #csvFile {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        .file-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+
+        .file-text {
+            font-size: 18px;
+            font-weight: 500;
+            color: #555;
+            margin-bottom: 10px;
+        }
+
+        .file-hint {
+            font-size: 14px;
+            color: #777;
+            line-height: 1.4;
+        }
+
+        .button-container {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 12px 30px;
+            font-size: 16px;
+            font-weight: 500;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+        }
+
+        .btn-primary {
+            background-color: #3498db;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: #2980b9;
+        }
+
+        .btn-primary:disabled {
+            background-color: #bdc3c7;
+            cursor: not-allowed;
+        }
+
+        .progress-container {
+            margin-bottom: 30px;
+            display: none;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background-color: #ecf0f1;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background-color: #27ae60;
+            border-radius: 10px;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .progress-text {
+            text-align: center;
+            font-size: 14px;
+            color: #555;
+        }
+
+        .result-container {
+            margin-top: 30px;
+            padding: 20px;
+            border-radius: 8px;
+            display: none;
+        }
+
+        .result-success {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+
+        .result-error {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+
+        .result-title {
+            font-size: 18px;
+            font-weight: 500;
+            margin-bottom: 15px;
+        }
+
+        .result-content {
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .error-list {
+            margin-top: 15px;
+            padding-left: 20px;
+        }
+
+        .error-list li {
+            margin-bottom: 5px;
+        }
+
+        .back-link {
+            display: block;
+            text-align: center;
+            margin-top: 30px;
+            color: #3498db;
+            text-decoration: none;
+            font-size: 14px;
+        }
+
+        .back-link:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                margin: 10px;
+                padding: 15px;
+            }
+
+            h1 {
+                font-size: 20px;
+            }
+
+            .file-upload {
+                padding: 30px;
+            }
+
+            .file-icon {
+                font-size: 36px;
+            }
+
+            .file-text {
+                font-size: 16px;
+            }
+
+            .btn {
+                padding: 10px 20px;
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>CSV导入 - 客户积分数据</h1>
+        
+        <div class="file-upload" id="fileUploadArea">
+            <input type="file" id="csvFile" accept=".csv,text/csv">
+            <div class="file-icon">📁</div>
+            <div class="file-text" id="fileText">点击或拖拽文件到此处上传</div>
+            <div class="file-hint">
+                支持CSV格式文件，包含客户手机号和积分两列数据<br>
+                示例：13800138000,100
+            </div>
+        </div>
+
+        <div class="button-container">
+            <button class="btn btn-primary" id="importBtn" disabled>开始导入</button>
+        </div>
+
+        <div class="progress-container" id="progressContainer">
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <div class="progress-text" id="progressText">准备导入...</div>
+        </div>
+
+        <div class="result-container" id="resultContainer">
+            <div class="result-title" id="resultTitle"></div>
+            <div class="result-content" id="resultContent"></div>
+        </div>
+
+        <a href="/view/inventory" class="back-link">返回库存查询</a>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const fileUploadArea = document.getElementById('fileUploadArea');
+            const csvFile = document.getElementById('csvFile');
+            const fileText = document.getElementById('fileText');
+            const importBtn = document.getElementById('importBtn');
+            const progressContainer = document.getElementById('progressContainer');
+            const progressFill = document.getElementById('progressFill');
+            const progressText = document.getElementById('progressText');
+            const resultContainer = document.getElementById('resultContainer');
+            const resultTitle = document.getElementById('resultTitle');
+            const resultContent = document.getElementById('resultContent');
+
+            let selectedFile = null;
+
+            // 处理文件选择
+            csvFile.addEventListener('change', function(e) {
+                if (e.target.files.length > 0) {
+                    selectedFile = e.target.files[0];
+                    fileText.textContent = `已选择文件：${selectedFile.name}`;
+                    importBtn.disabled = false;
+                }
+            });
+
+            // 处理拖放功能
+            fileUploadArea.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                fileUploadArea.classList.add('dragover');
+            });
+
+            fileUploadArea.addEventListener('dragleave', function() {
+                fileUploadArea.classList.remove('dragover');
+            });
+
+            fileUploadArea.addEventListener('drop', function(e) {
+                e.preventDefault();
+                fileUploadArea.classList.remove('dragover');
+                
+                if (e.dataTransfer.files.length > 0) {
+                    selectedFile = e.dataTransfer.files[0];
+                    fileText.textContent = `已选择文件：${selectedFile.name}`;
+                    importBtn.disabled = false;
+                }
+            });
+
+            // 处理导入按钮点击
+            importBtn.addEventListener('click', function() {
+                if (!selectedFile) return;
+
+                // 显示进度条
+                progressContainer.style.display = 'block';
+                resultContainer.style.display = 'none';
+
+                // 创建FormData对象
+                const formData = new FormData();
+                formData.append('file', selectedFile);
+
+                // 发送文件到服务器
+                const xhr = new XMLHttpRequest();
+                xhr.open('POST', '/api/csv/import', true);
+                
+                xhr.upload.addEventListener('progress', function(e) {
+                    if (e.lengthComputable) {
+                        const percentComplete = (e.loaded / e.total) * 100;
+                        progressFill.style.width = `${percentComplete}%`;
+                        progressText.textContent = `上传中：${Math.round(percentComplete)}%`;
+                    }
+                });
+
+                xhr.onload = function() {
+                    progressFill.style.width = '100%';
+                    progressText.textContent = '处理完成';
+
+                    setTimeout(function() {
+                        progressContainer.style.display = 'none';
+                        
+                        // 处理响应
+                        if (xhr.status === 200) {
+                            const response = JSON.parse(xhr.responseText);
+                            if (response.success) {
+                                resultContainer.className = 'result-container result-success';
+                                resultTitle.textContent = '导入成功';
+                                resultContent.textContent = `成功导入 ${response.data.successCount} 条记录，失败 ${response.data.errorCount} 条记录`;
+                            } else {
+                                resultContainer.className = 'result-container result-error';
+                                resultTitle.textContent = '导入失败';
+                                resultContent.textContent = response.message;
+                                
+                                if (response.data && response.data.errors) {
+                                    const errorList = document.createElement('ul');
+                                    errorList.className = 'error-list';
+                                    response.data.errors.forEach(error => {
+                                        const li = document.createElement('li');
+                                        li.textContent = error;
+                                        errorList.appendChild(li);
+                                    });
+                                    resultContent.appendChild(errorList);
+                                }
+                            }
+                        } else {
+                            resultContainer.className = 'result-container result-error';
+                            resultTitle.textContent = '导入失败';
+                            resultContent.textContent = '服务器错误，请稍后重试';
+                        }
+                        
+                        resultContainer.style.display = 'block';
+                    }, 500);
+                };
+
+                xhr.onerror = function() {
+                    progressContainer.style.display = 'none';
+                    resultContainer.className = 'result-container result-error';
+                    resultTitle.textContent = '导入失败';
+                    resultContent.textContent = '网络错误，请稍后重试';
+                    resultContainer.style.display = 'block';
+                };
+
+                xhr.send(formData);
+            });
+        });
+    </script>
+</body>
+</html>

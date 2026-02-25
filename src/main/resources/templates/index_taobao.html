@@ -1,13 +1,125 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.w3.org/1999/xhtml">
+<html lang="zh">
 <head>
     <meta charset="UTF-8">
-    <title>授权页面</title>
+    <title>两门店组合满足</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/static/layui/css/modules/code.css">
+    <style>
+        body {
+            font-family: "Microsoft YaHei", sans-serif;
+            margin: 20px;
+            background-color: #fdf6e3;
+        }
+        .store-combo-container {
+            margin: 20px 0;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .store-group-item {
+            margin: 10px 0;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .scheme-items {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .item-card {
+            border: 1px solid #ccc;
+            padding: 10px;
+            width: 120px;
+            text-align: center;
+            background: #f9f9f9;
+            border-radius: 4px;
+        }
+        .item-card div {
+            margin: 5px 0;
+            font-size: 12px;
+        }
+        .item-card .stock {
+            color: orange;
+            font-weight: bold;
+        }
+    </style>
 </head>
 <body>
-<a href="https://oauth.taobao.com/authorize?response_type=code&client_id=32976438&redirect_uri=http://cainiao.enjoyme.cn:9213/code/find&state=111222&view=web"
-    th:href="${redirect_url}"
-    >登录授权</a>
+
+<h2>备选方案：两门店组合满足</h2>
+<p>找到 <span id="total-count">0</span> 个两门店组合方案，需要绑仓<span id="bind-count">0</span>次发货。（显示前8条）</p>
+
+<div class="store-combo-container">
+    <h3>门店组合选择</h3>
+    <div id="store1-list"></div>
+    <div id="scheme-container"></div>
+</div>
+
+<script type="text/javascript">
+    // 页面加载完成后执行
+    document.addEventListener('DOMContentLoaded', function () {
+        loadStore1Options();
+    });
+
+    // 加载所有门店一选项
+    function loadStore1Options() {
+        const container = document.getElementById('store1-list');
+        fetch('/api/store-groups')
+            .then(response => response.json())
+            .then(data => {
+                data.forEach(group => {
+                    const div = document.createElement('div');
+                    div.className = 'store-group-item';
+                    div.innerHTML = `
+                        <strong>${group.store1}</strong>
+                        <select onchange="onStore2Change('${group.store1}', this.value)">
+                            <option value="">请选择门店二</option>
+                            ${group.store2Options.map(opt => `<option value="${opt}">${opt}</option>`).join('')}
+                        </select>
+                    `;
+                    container.appendChild(div);
+                });
+            })
+            .catch(err => console.error('加载门店失败:', err));
+    }
+
+    // 当用户选择门店二时，加载对应方案
+    function onStore2Change(store1, store2) {
+        if (!store2) return;
+
+        const container = document.getElementById('scheme-container');
+        container.innerHTML = '<p>正在加载...</p>';
+
+        fetch(`/api/scheme?store1=${encodeURIComponent(store1)}&store2=${encodeURIComponent(store2)}`)
+            .then(response => response.json())
+            .then(data => {
+                renderScheme(data);
+            })
+            .catch(err => {
+                container.innerHTML = '<p style="color:red;">加载失败: ' + err.message + '</p>';
+            });
+    }
+
+    // 渲染具体方案（商品条码、库存等）
+    function renderScheme(scheme) {
+        const container = document.getElementById('scheme-container');
+        let html = '<h4>方案详情：</h4><div class="scheme-items">';
+        scheme.items.forEach(item => {
+            html += `
+                <div class="item-card">
+                    <div>条码: ${item.barcode}</div>
+                    <div>库存: <span class="stock">${item.stock}</span></div>
+                </div>
+            `;
+        });
+        html += '</div>';
+        container.innerHTML = html;
+    }
+</script>
 
 </body>
 </html>

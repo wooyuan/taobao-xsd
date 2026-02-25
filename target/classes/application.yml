@@ -1,8 +1,8 @@
 spring:
   profiles:
-#    active: dev
+    active: dev
 #
-    active: druid
+    # active: druid
   thymeleaf:
     mode: HTML
     encoding: utf-8
@@ -15,30 +15,59 @@ spring:
   jackson:
     time-zone: GMT+8
     date-format: yyyy-MM-dd HH:mm:ss
+# MyBatis配置
+mybatis:
+  # 指定加载的Mapper.xml文件
+  mapperLocations: 
+    - classpath:mybatis/system/TimeLineMapper.xml
+    - classpath:mybatis/system/SystemInfoMapper.xml
+    - classpath:mybatis/workhour/WorkHourMapper.xml
 #    default-property-inclusion: non_null
-#  servlet:
-#    multipart:
-#      max-file-size: 2MB
-#      max-request-size: 10MB
+  servlet:
+    multipart:
+      max-file-size: 100MB
+      max-request-size: 100MB
 
 server:
   port: 9214
 logging:
   level:
     com.taobao.logistics: debug
-    org.springframework.jdbc: DEBUG
-    org.springframework.boot.autoconfigure.jdbc: DEBUG
-    com.alibaba.druid: DEBUG
+    org.springframework.jdbc: INFO
+    org.springframework.boot.autoconfigure.jdbc: INFO
+    com.alibaba.druid: INFO
   file:
 #    不生效
     path: ${user.dir}/LOG/
-    name: taobao.log
+    name: taobaoxsd.log
 
 # 用户配置
 user:
   password:
     # 密码错误{maxRetryCount}次锁定10分钟
     maxRetryCount: 10
+
+# 登录配置
+login:
+  # 是否启用登录验证
+  enabled: false
+  # 登录账号（多个账号用逗号分隔）
+  username: admin
+  # 登录密码（多个密码用逗号分隔，与账号一一对应）
+  password: JNR5639569,com
+  # Session超时时间（分钟）
+  session-timeout: 30
+
+# 日志清理配置
+log:
+  cleanup:
+    # 日志文件保留天数，超过此天数的日志文件将被自动删除
+    retention:
+      days: 30
+    # 是否启用定时清理
+    enabled: true
+    # 定时清理的cron表达式（默认每天凌晨2点执行）
+    cron: "0 0 2 * * ?"
 hswing:
   os-name: ${os.name}
   profile: ${user.dir}${file.separator}upload${file.separator}upload

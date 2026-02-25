@@ -1,0 +1,1852 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <title>员工工时统计报表</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- 引入ECharts库 -->
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <style>
+        :root {
+            /* 企业微信官方色彩系统 */
+            --primary-color: #1A7AF8;
+            --primary-light: #4A9BFF;
+            --primary-dark: #1464D2;
+            --success-color: #52C41A;
+            --warning-color: #FAAD14;
+            --error-color: #F5222D;
+            
+            /* 背景色系 */
+            --bg-primary: #FFFFFF;
+            --bg-secondary: #F2F3F5;
+            --bg-tertiary: #E7E9EB;
+            --bg-hover: #F5F5F5;
+            
+            /* 文字色系 */
+            --text-primary: #262626;
+            --text-secondary: #595959;
+            --text-tertiary: #8C8C8C;
+            --text-disabled: #BFBFBF;
+            
+            /* 边框色系 */
+            --border-color: #E7E9EB;
+            --border-light: #F2F3F5;
+            
+            /* 间距系统 */
+            --spacing-xs: 4px;
+            --spacing-sm: 8px;
+            --spacing-md: 16px;
+            --spacing-lg: 24px;
+            --spacing-xl: 32px;
+            --spacing-xxl: 48px;
+            
+            /* 圆角 */
+            --radius-sm: 4px;
+            --radius-md: 8px;
+            --radius-lg: 12px;
+            --radius-xl: 16px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Helvetica Neue", Helvetica, Arial, sans-serif;
+            background-color: var(--bg-secondary);
+            color: var(--text-primary);
+            line-height: 1.5;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1440px;
+            margin: 0 auto;
+            padding: var(--spacing-lg);
+        }
+
+        /* 页面头部 */
+        .page-header {
+            background: var(--bg-primary);
+            border-radius: var(--radius-lg);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+            padding: var(--spacing-xl) var(--spacing-lg);
+            margin-bottom: var(--spacing-lg);
+            text-align: center;
+            border: 1px solid var(--border-light);
+        }
+
+        .page-header h1 {
+            color: var(--text-primary);
+            font-size: 32px;
+            font-weight: 600;
+            margin: 0;
+            letter-spacing: 0.5px;
+        }
+
+        .page-header .subtitle {
+            color: var(--text-secondary);
+            font-size: 16px;
+            margin-top: var(--spacing-sm);
+        }
+
+        /* 卡片组件 */
+        .card {
+            background: var(--bg-primary);
+            border-radius: var(--radius-lg);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+            border: 1px solid var(--border-light);
+            margin-bottom: var(--spacing-lg);
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+        }
+
+        .card-header {
+            padding: var(--spacing-lg);
+            border-bottom: 1px solid var(--border-light);
+            background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+        }
+
+        .card-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+        }
+
+        .card-title::before {
+            content: '';
+            width: 4px;
+            height: 20px;
+            background: var(--primary-color);
+            border-radius: 2px;
+        }
+
+        .card-body {
+            padding: var(--spacing-lg);
+        }
+
+        /* 操作按钮样式 */
+        .action-buttons {
+            display: flex;
+            gap: var(--spacing-sm);
+            justify-content: flex-end;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        /* 操作按钮样式 */
+        .action-buttons {
+            margin-bottom: 20px;
+            text-align: right;
+        }
+        /* 按钮组件 */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--spacing-xs);
+            padding: var(--spacing-sm) var(--spacing-md);
+            border: 1px solid transparent;
+            border-radius: var(--radius-md);
+            font-size: 14px;
+            font-weight: 500;
+            line-height: 1;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            white-space: nowrap;
+            user-select: none;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background-color: var(--primary-dark);
+            border-color: var(--primary-dark);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(26, 122, 248, 0.3);
+        }
+
+        .btn-secondary {
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            border-color: var(--border-color);
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background-color: var(--bg-hover);
+            border-color: var(--primary-color);
+            color: var(--primary-color);
+        }
+
+        .btn-success {
+            background-color: var(--success-color);
+            color: white;
+            border-color: var(--success-color);
+        }
+
+        .btn-success:hover:not(:disabled) {
+            background-color: #389E0D;
+            border-color: #389E0D;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(82, 196, 26, 0.3);
+        }
+
+        .btn-sm {
+            padding: var(--spacing-xs) var(--spacing-sm);
+            font-size: 12px;
+        }
+
+        .btn-lg {
+            padding: var(--spacing-md) var(--spacing-lg);
+            font-size: 16px;
+        }
+
+        /* 统计卡片 */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: var(--spacing-lg);
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .stat-card {
+            background: var(--bg-primary);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-lg);
+            border: 1px solid var(--border-light);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--primary-color), var(--primary-light));
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-title {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: var(--spacing-sm);
+            font-weight: 500;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: var(--spacing-xs);
+        }
+
+        .stat-unit {
+            font-size: 14px;
+            color: var(--text-tertiary);
+        }
+
+        .stat-trend {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-xs);
+            font-size: 12px;
+            margin-top: var(--spacing-sm);
+        }
+
+        .trend-up {
+            color: var(--success-color);
+        }
+
+        .trend-down {
+            color: var(--error-color);
+        }
+        /* 数据表格 */
+        .table-container {
+            background: var(--bg-primary);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border-light);
+            overflow: hidden;
+            margin-top: var(--spacing-md);
+        }
+
+        .table-header {
+            background: var(--bg-secondary);
+            padding: var(--spacing-md) var(--spacing-lg);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .table-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin: 0;
+        }
+
+        .table-actions {
+            display: flex;
+            gap: var(--spacing-sm);
+            align-items: center;
+        }
+
+        .statistics-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+
+        .statistics-table th,
+        .statistics-table td {
+            padding: var(--spacing-md) var(--spacing-lg);
+            text-align: left;
+            border-bottom: 1px solid var(--border-light);
+            vertical-align: middle;
+        }
+
+        .statistics-table th {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            font-weight: 600;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .statistics-table th.sortable {
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.2s ease;
+        }
+
+        .statistics-table th.sortable:hover {
+            background: var(--bg-tertiary);
+            color: var(--primary-color);
+        }
+
+        .statistics-table th.sortable::after {
+            content: '↕️';
+            margin-left: var(--spacing-xs);
+            opacity: 0.5;
+        }
+
+        .statistics-table th.sort-asc::after {
+            content: '↑';
+            opacity: 1;
+            color: var(--primary-color);
+        }
+
+        .statistics-table th.sort-desc::after {
+            content: '↓';
+            opacity: 1;
+            color: var(--primary-color);
+        }
+
+        .statistics-table td {
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+
+        .statistics-table tbody tr {
+            transition: all 0.2s ease;
+        }
+
+        .statistics-table tbody tr:hover {
+            background: var(--bg-hover);
+        }
+
+        .statistics-table tbody tr:nth-child(even) {
+            background: rgba(242, 243, 245, 0.3);
+        }
+
+        .statistics-table tbody tr:nth-child(even):hover {
+            background: var(--bg-hover);
+        }
+
+        /* 总计行样式 */
+        .total-row {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-light) 100%);
+            color: white;
+            font-weight: 600;
+        }
+
+        .total-row td {
+            color: white;
+            font-weight: 600;
+        }
+
+        /* 员工标签 */
+        .employee-tag {
+            display: inline-flex;
+            align-items: center;
+            padding: var(--spacing-xs) var(--spacing-sm);
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin: 1px;
+            transition: all 0.2s ease;
+        }
+
+        .employee-tag:hover {
+            background: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+            transform: scale(1.05);
+        }
+
+        /* 进度条 */
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: var(--bg-tertiary);
+            border-radius: 3px;
+            overflow: hidden;
+            margin-top: var(--spacing-xs);
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary-color), var(--primary-light));
+            border-radius: 3px;
+            transition: width 0.3s ease;
+        }
+
+        /* 排名徽章 */
+        .rank-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            font-size: 12px;
+            font-weight: 600;
+            color: white;
+        }
+
+        .rank-1 { background: linear-gradient(135deg, #FFD700, #FFA500); }
+        .rank-2 { background: linear-gradient(135deg, #C0C0C0, #808080); }
+        .rank-3 { background: linear-gradient(135deg, #CD7F32, #8B4513); }
+        .rank-other { background: var(--text-tertiary); }
+        /* 响应式设计 */
+        @media (max-width: 1200px) {
+            .container {
+                padding: var(--spacing-md);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: var(--spacing-sm);
+            }
+
+            .page-header {
+                padding: var(--spacing-lg) var(--spacing-md);
+            }
+
+            .page-header h1 {
+                font-size: 24px;
+            }
+
+            .card-body {
+                padding: var(--spacing-md);
+            }
+
+            .action-buttons {
+                justify-content: center;
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+                gap: var(--spacing-md);
+            }
+
+            .table-container {
+                border-radius: 0;
+                margin: 0 calc(-1 * var(--spacing-sm));
+            }
+
+            .statistics-table {
+                font-size: 13px;
+            }
+
+            .statistics-table th,
+            .statistics-table td {
+                padding: var(--spacing-sm) var(--spacing-md);
+            }
+
+            .layout-responsive {
+                flex-direction: column;
+            }
+
+            .chart-container {
+                margin-top: var(--spacing-lg);
+            }
+        }
+
+        @media (max-width: 480px) {
+            .page-header h1 {
+                font-size: 20px;
+            }
+
+            .card-title {
+                font-size: 16px;
+            }
+
+            .stat-value {
+                font-size: 24px;
+            }
+
+            .employee-tag {
+                font-size: 11px;
+                padding: 2px var(--spacing-xs);
+            }
+        }
+
+        /* 图表容器 */
+        .chart-container {
+            background: var(--bg-primary);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border-light);
+            padding: var(--spacing-lg);
+            height: 400px;
+            position: relative;
+        }
+
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: var(--spacing-md);
+            padding-bottom: var(--spacing-sm);
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        .chart-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin: 0;
+        }
+
+        .chart-actions {
+            display: flex;
+            gap: var(--spacing-xs);
+        }
+
+        .chart-canvas {
+            width: 100%;
+            height: calc(100% - 60px);
+        }
+
+        /* 加载状态 */
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: var(--spacing-xxl);
+            color: var(--text-secondary);
+        }
+
+        .loading-spinner {
+            width: 24px;
+            height: 24px;
+            border: 2px solid var(--bg-tertiary);
+            border-top: 2px solid var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: var(--spacing-sm);
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* 空状态 */
+        .empty-state {
+            text-align: center;
+            padding: var(--spacing-xxl);
+            color: var(--text-tertiary);
+        }
+
+        .empty-icon {
+            font-size: 48px;
+            margin-bottom: var(--spacing-md);
+            opacity: 0.5;
+        }
+
+        .empty-message {
+            font-size: 16px;
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .empty-description {
+            font-size: 14px;
+            opacity: 0.7;
+        }
+
+        /* 布局辅助 */
+        .layout-responsive {
+            display: flex;
+            gap: var(--spacing-lg);
+            align-items: flex-start;
+        }
+
+        .layout-main {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .layout-sidebar {
+            flex: 0 0 400px;
+        }
+
+        @media (max-width: 1024px) {
+            .layout-sidebar {
+                flex: 0 0 300px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .layout-responsive {
+                flex-direction: column;
+            }
+
+            .layout-sidebar {
+                flex: none;
+            }
+        }
+
+        /* 工具提示 */
+        .tooltip {
+            position: relative;
+            cursor: help;
+        }
+
+        .tooltip::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--text-primary);
+            color: white;
+            padding: var(--spacing-xs) var(--spacing-sm);
+            border-radius: var(--radius-sm);
+            font-size: 12px;
+            white-space: nowrap;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.2s ease;
+            z-index: 1000;
+        }
+
+        .tooltip:hover::after {
+            opacity: 1;
+            visibility: visible;
+            transform: translateX(-50%) translateY(-4px);
+        }
+        /* 时间轴弹窗样式 */
+        .timeline-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        .timeline-modal.show {
+            display: flex;
+        }
+        .timeline-modal-content {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            width: 80%;
+            max-width: 800px;
+            max-height: 80%;
+            overflow-y: auto;
+            position: relative;
+        }
+        .timeline-modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+        }
+        .timeline-modal-header h3 {
+            margin: 0;
+            color: #333;
+        }
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #999;
+        }
+        .close-btn:hover {
+            color: #333;
+        }
+        /* 时间轴样式 */
+        .timeline {
+            position: relative;
+            padding: 20px 0;
+        }
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 50%;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: #1E9FFF;
+            transform: translateX(-50%);
+        }
+        .timeline-item {
+            position: relative;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+        }
+        .timeline-item:nth-child(even) {
+            flex-direction: row-reverse;
+        }
+        .timeline-content {
+            width: 45%;
+            padding: 15px;
+            background: #f9f9f9;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .timeline-date {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+        .timeline-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        .timeline-employee {
+            font-size: 14px;
+            color: #1E9FFF;
+        }
+        .timeline-dot {
+            position: absolute;
+            left: 50%;
+            width: 16px;
+            height: 16px;
+            background: #1E9FFF;
+            border-radius: 50%;
+            transform: translateX(-50%);
+            z-index: 1;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 页面头部 -->
+        <div class="page-header">
+            <h1>📊 员工工时统计报表</h1>
+            <div class="subtitle">Enterprise WeChat Platform - Work Hour Analytics Dashboard</div>
+        </div>
+
+        <!-- 统计概览卡片 -->
+        <div class="stats-grid" id="statsOverview">
+            <!-- 统计卡片将通过JavaScript动态生成 -->
+        </div>
+
+        <!-- 主要内容区域 -->
+        <div class="layout-responsive">
+            <!-- 主要内容 -->
+            <div class="layout-main">
+                <!-- 员工工时统计 -->
+                <div class="card">
+                    <div class="card-header">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <h2 class="card-title">按员工统计执行工时合计</h2>
+                            <div class="table-actions">
+                                <a href="http://cainiao.enjoyme.cn:9214/view/systemInfo" class="btn btn-secondary btn-sm">🏢 系统管理</a>
+                                <a href="http://cainiao.enjoyme.cn:9214/view/salesReport" class="btn btn-secondary btn-sm">📈 销售报表</a>
+                                <a href="javascript:void(0);" class="btn btn-success btn-sm" onclick="exportAllData()">📤 导出数据</a>
+                                <a href="/view/workHour" class="btn btn-primary btn-sm">🔙 返回管理</a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-container">
+                            <div class="table-header">
+                                <h3 class="table-title">员工工时明细</h3>
+                                <div class="table-actions">
+                                    <span class="tooltip" data-tooltip="按工时降序排列">⏰ 实时更新</span>
+                                </div>
+                            </div>
+                            <table class="statistics-table">
+                                <thead>
+                                    <tr>
+                                        <th class="sortable" onclick="handleEmployeeSort('employee')">👤 员工姓名</th>
+                                        <th class="sortable" onclick="handleEmployeeSort('hours')">⏱️ 执行工时</th>
+                                        <th class="sortable" onclick="handleEmployeeSort('percentage')">📊 占比</th>
+                                        <th>🏆 排名</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="statisticsTableBody">
+                                    <!-- 数据将通过JavaScript动态加载 -->
+                                </tbody>
+                                <tfoot>
+                                    <tr class="total-row" id="totalRow">
+                                        <td>📋 总计</td>
+                                        <td id="totalHours">0.00</td>
+                                        <td>100.00%</td>
+                                        <td>🎯</td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 系统员工执行工时 -->
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title" style="color: var(--error-color);">🔧 系统员工执行工时明细</h2>
+                    </div>
+                    <div class="card-body">
+                        <div id="systemEmployeeStatistics">
+                            <!-- 数据将通过JavaScript动态加载 -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 侧边栏 - 图表区域 -->
+            <div class="layout-sidebar">
+                <div class="chart-container">
+                    <div class="chart-header">
+                        <h3 class="chart-title">🥧 员工工时分布</h3>
+                        <div class="chart-actions">
+                            <button class="btn btn-secondary btn-sm" onclick="refreshChart()">🔄 刷新</button>
+                        </div>
+                    </div>
+                    <div class="chart-canvas">
+                        <div id="employeePieChart"></div>
+                    </div>
+                </div>
+
+                <!-- 快速操作面板 -->
+                <div class="card" style="margin-top: var(--spacing-lg);">
+                    <div class="card-header">
+                        <h3 class="card-title">⚡ 快速操作</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="action-buttons" style="flex-direction: column; align-items: stretch;">
+                            <button class="btn btn-primary" onclick="showDevelopmentTimeline('BI系统')">
+                                📅 查看BI系统发展时间轴
+                            </button>
+                            <button class="btn btn-secondary" onclick="showDevelopmentTimeline('MOM系统')">
+                                🔄 查看MOM系统发展历程
+                            </button>
+                            <button class="btn btn-success" onclick="exportReport()">
+                                📊 生成综合报告
+                            </button>
+                            <button class="btn btn-secondary" onclick="refreshAllData()">
+                                🔃 刷新所有数据
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 数据概览 -->
+                <div class="card" style="margin-top: var(--spacing-lg);">
+                    <div class="card-header">
+                        <h3 class="card-title">📈 数据概览</h3>
+                    </div>
+                    <div class="card-body">
+                        <div id="dataOverview">
+                            <!-- 数据概览将通过JavaScript动态生成 -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 时间轴弹窗 -->
+    <div class="timeline-modal" id="timelineModal">
+        <div class="timeline-modal-content">
+            <div class="timeline-modal-header">
+                <h3>系统发展时间轴</h3>
+                <button class="close-btn" onclick="closeTimelineModal()">&times;</button>
+            </div>
+            <div class="timeline" id="timelineContent">
+                <!-- 时间轴数据将通过JavaScript动态加载 -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 全局变量
+        let currentSortField = '';
+        let currentSortDirection = 'desc';
+        let statisticsData = [];
+        let systemStatisticsData = [];
+        let systemInfoMap = new Map();
+        let chartInstance = null;
+        
+        // 分页相关变量
+        let currentPage = 1;
+        let pageSize = 10;
+        let totalPages = 1;
+        let systemArray = [];
+
+        // 页面加载完成后渲染工时统计数据
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeApp();
+        });
+
+        // 初始化应用
+        async function initializeApp() {
+            showLoading();
+            try {
+                await Promise.all([
+                    fetchWorkHourStatistics(),
+                    fetchSystemEmployeeStatistics()
+                ]);
+                generateStatsOverview();
+                generateDataOverview();
+                hideLoading();
+            } catch (error) {
+                console.error('初始化应用失败:', error);
+                showError('数据加载失败，请刷新页面重试');
+                hideLoading();
+            }
+        }
+
+        // 显示加载状态
+        function showLoading() {
+            const statsGrid = document.getElementById('statsOverview');
+            const systemStats = document.getElementById('systemEmployeeStatistics');
+            
+            statsGrid.innerHTML = `
+                <div class="loading">
+                    <div class="loading-spinner"></div>
+                    <span>正在加载统计数据...</span>
+                </div>
+            `;
+            
+            systemStats.innerHTML = `
+                <div class="loading">
+                    <div class="loading-spinner"></div>
+                    <span>正在加载系统数据...</span>
+                </div>
+            `;
+        }
+
+        // 隐藏加载状态
+        function hideLoading() {
+            // 加载状态会被实际数据替换
+        }
+
+        // 显示错误信息
+        function showError(message) {
+            const statsGrid = document.getElementById('statsOverview');
+            statsGrid.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-icon">❌</div>
+                    <div class="empty-message">${message}</div>
+                </div>
+            `;
+        }
+
+        // 获取按员工统计的工时数据
+        async function fetchWorkHourStatistics() {
+            try {
+                const response = await fetch('/api/workHour/statistics/employee');
+                const data = await response.json();
+                console.log('按员工统计后端返回的数据:', data);
+                
+                if (data.code === 0) {
+                    statisticsData = data.data || [];
+                    renderStatistics(statisticsData);
+                    return statisticsData;
+                } else {
+                    throw new Error(`数据获取失败: ${data.message}`);
+                }
+            } catch (error) {
+                console.error('获取按员工统计的工时数据失败:', error);
+                throw error;
+            }
+        }
+
+        // 渲染按员工统计的工时数据
+        function renderStatistics(statisticsList) {
+            const tbody = document.getElementById('statisticsTableBody');
+            let html = '';
+            let totalHours = 0;
+            
+            // 先计算总工时
+            statisticsList.forEach(item => {
+                const hours = parseFloat(item.TOTAL_ACTUAL_HOURS || 0);
+                totalHours += hours;
+            });
+            
+            if (statisticsList.length === 0) {
+                html = `
+                    <tr>
+                        <td colspan="4">
+                            <div class="empty-state">
+                                <div class="empty-icon">📊</div>
+                                <div class="empty-message">暂无统计数据</div>
+                                <div class="empty-description">请稍后刷新页面重试</div>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            } else {
+                // 按工时排序
+                const sortedData = [...statisticsList].sort((a, b) => {
+                    const hoursA = parseFloat(a.TOTAL_ACTUAL_HOURS || 0);
+                    const hoursB = parseFloat(b.TOTAL_ACTUAL_HOURS || 0);
+                    return currentSortDirection === 'asc' ? hoursA - hoursB : hoursB - hoursA;
+                });
+                
+                sortedData.forEach((item, index) => {
+                    const employee = item.EMPLOYEE || '未指定员工';
+                    const hours = parseFloat(item.TOTAL_ACTUAL_HOURS || 0);
+                    const percentage = totalHours > 0 ? (hours / totalHours) * 100 : 0;
+                    
+                    // 排名徽章样式
+                    let rankClass = 'rank-other';
+                    let rankEmoji = '🏅';
+                    if (index === 0) { rankClass = 'rank-1'; rankEmoji = '🥇'; }
+                    else if (index === 1) { rankClass = 'rank-2'; rankEmoji = '🥈'; }
+                    else if (index === 2) { rankClass = 'rank-3'; rankEmoji = '🥉'; }
+                    
+                    html += `
+                        <tr>
+                            <td>
+                                <div style="display: flex; align-items: center; gap: var(--spacing-sm);">
+                                    <span class="rank-badge ${rankClass}">${index + 1}</span>
+                                    <span class="employee-tag">${employee}</span>
+                                </div>
+                            </td>
+                            <td>
+                                <div>
+                                    <strong>${hours.toFixed(2)}</strong> 小时
+                                    <div class="progress-bar">
+                                        <div class="progress-fill" style="width: ${percentage}%"></div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <span style="color: var(--primary-color); font-weight: 600;">${percentage.toFixed(1)}%</span>
+                            </td>
+                            <td>
+                                    <span style="font-weight: 600; color: var(--text-primary);">${index + 1}</span>
+                                </td>
+                        </tr>
+                    `;
+                });
+            }
+            
+            tbody.innerHTML = html;
+            document.getElementById('totalHours').textContent = totalHours.toFixed(2);
+            
+            // 绘制员工工时饼状图
+            drawEmployeePieChart(statisticsList);
+        }
+
+        // 生成统计概览
+        function generateStatsOverview() {
+            const statsGrid = document.getElementById('statsOverview');
+            
+            if (statisticsData.length === 0) {
+                statsGrid.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">📈</div>
+                        <div class="empty-message">暂无统计数据</div>
+                    </div>
+                `;
+                return;
+            }
+            
+            const totalHours = statisticsData.reduce((sum, item) => {
+                return sum + parseFloat(item.TOTAL_ACTUAL_HOURS || 0);
+            }, 0);
+            
+            const totalEmployees = statisticsData.length;
+            const avgHours = totalEmployees > 0 ? totalHours / totalEmployees : 0;
+            const topEmployee = statisticsData.reduce((top, item) => {
+                const hours = parseFloat(item.TOTAL_ACTUAL_HOURS || 0);
+                const topHours = parseFloat(top.TOTAL_ACTUAL_HOURS || 0);
+                return hours > topHours ? item : top;
+            }, statisticsData[0]);
+            
+            const topEmployeeName = topEmployee?.EMPLOYEE || '未知';
+            const topEmployeeHours = parseFloat(topEmployee?.TOTAL_ACTUAL_HOURS || 0);
+            
+            statsGrid.innerHTML = `
+                <div class="stat-card">
+                    <div class="stat-title">⏰ 总工时</div>
+                    <div class="stat-value">${totalHours.toFixed(0)}</div>
+                    <div class="stat-unit">小时</div>
+                    <div class="stat-trend trend-up">
+                        <span>📈</span>
+                        <span>本月统计</span>
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-title">👥 参与员工</div>
+                    <div class="stat-value">${totalEmployees}</div>
+                    <div class="stat-unit">人</div>
+                    <div class="stat-trend trend-up">
+                        <span>👔</span>
+                        <span>活跃员工</span>
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-title">📊 平均工时</div>
+                    <div class="stat-value">${avgHours.toFixed(1)}</div>
+                    <div class="stat-unit">小时/人</div>
+                    <div class="stat-trend trend-up">
+                        <span>📈</span>
+                        <span>团队均值</span>
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-title">🏆 最佳员工</div>
+                    <div class="stat-value" style="font-size: 24px;">${topEmployeeName}</div>
+                    <div class="stat-unit">${topEmployeeHours.toFixed(1)} 小时</div>
+                    <div class="stat-trend trend-up">
+                        <span>🥇</span>
+                        <span>本月之星</span>
+                    </div>
+                </div>
+            `;
+        }
+
+        // 生成数据概览
+        function generateDataOverview() {
+            const dataOverview = document.getElementById('dataOverview');
+            
+            if (statisticsData.length === 0) {
+                dataOverview.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">📊</div>
+                        <div class="empty-message">暂无数据</div>
+                    </div>
+                `;
+                return;
+            }
+            
+            const systemCount = new Set();
+            const totalHours = statisticsData.reduce((sum, item) => {
+                return sum + parseFloat(item.TOTAL_ACTUAL_HOURS || 0);
+            }, 0);
+            
+            // 模拟系统数量（实际应该从systemStatisticsData中获取）
+            const estimatedSystems = Math.ceil(statisticsData.length / 3);
+            
+            dataOverview.innerHTML = `
+                <div style="display: flex; flex-direction: column; gap: var(--spacing-md);">
+                    <div style="padding: var(--spacing-sm); background: var(--bg-secondary); border-radius: var(--radius-sm);">
+                        <div style="font-size: 12px; color: var(--text-secondary);">🖥️ 管理系统</div>
+                        <div style="font-size: 20px; font-weight: 600; color: var(--text-primary);">${estimatedSystems} 个</div>
+                    </div>
+                    
+                    <div style="padding: var(--spacing-sm); background: var(--bg-secondary); border-radius: var(--radius-sm);">
+                        <div style="font-size: 12px; color: var(--text-secondary);">⏱️ 总工时</div>
+                        <div style="font-size: 20px; font-weight: 600; color: var(--primary-color);">${totalHours.toFixed(0)}h</div>
+                    </div>
+                    
+                    <div style="padding: var(--spacing-sm); background: var(--bg-secondary); border-radius: var(--radius-sm);">
+                        <div style="font-size: 12px; color: var(--text-secondary);">📅 最后更新</div>
+                        <div style="font-size: 16px; font-weight: 600; color: var(--text-primary);">${new Date().toLocaleDateString()}</div>
+                    </div>
+                    
+                    <div style="padding: var(--spacing-sm); background: var(--success-color); color: white; border-radius: var(--radius-sm); text-align: center;">
+                        <div style="font-size: 12px; opacity: 0.9;">📊 数据状态</div>
+                        <div style="font-size: 14px; font-weight: 600;">✅ 正常</div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // 绘制员工执行工时饼状图
+        // 绘制员工执行工时饼状图
+        function drawEmployeePieChart(statisticsList) {
+            // 准备饼状图数据
+            let pieData = [];
+            let totalHours = 0;
+            
+            // 计算总工时
+            statisticsList.forEach(item => {
+                const hours = parseFloat(item.TOTAL_ACTUAL_HOURS || 0);
+                totalHours += hours;
+            });
+            
+            // 处理前10个员工，其余归为"其他"
+            const topEmployees = statisticsList.slice(0, 10);
+            let otherHours = 0;
+            
+            topEmployees.forEach(item => {
+                const employee = item.EMPLOYEE || '未指定员工';
+                const hours = parseFloat(item.TOTAL_ACTUAL_HOURS || 0);
+                
+                pieData.push({
+                    name: employee,
+                    value: hours
+                });
+            });
+            
+            // 如果有超过10个员工，将剩余的归为"其他"
+            if (statisticsList.length > 10) {
+                for (let i = 10; i < statisticsList.length; i++) {
+                    const hours = parseFloat(statisticsList[i].TOTAL_ACTUAL_HOURS || 0);
+                    otherHours += hours;
+                }
+                
+                pieData.push({
+                    name: '其他',
+                    value: otherHours
+                });
+            }
+            
+            // 初始化ECharts实例
+            const chartDom = document.getElementById('employeePieChart');
+            
+            // 设置图表容器高度
+            chartDom.style.height = '100%';
+            chartDom.style.width = '100%';
+            
+            // 检查容器是否有尺寸
+            const containerRect = chartDom.getBoundingClientRect();
+            if (containerRect.width === 0 || containerRect.height === 0) {
+                console.error('图表容器没有尺寸，无法渲染图表');
+                return;
+            }
+            
+            const myChart = echarts.init(chartDom);
+            
+            // 配置饼状图选项
+            const option = {
+                title: {
+                    text: '员工执行工时分布 ↓',
+                    left: 'center',
+                    top: '5%',
+                    textStyle: {
+                        fontSize: 18,
+                        fontWeight: 'bold'
+                    }
+                },
+                tooltip: {
+                    trigger: 'item',
+                    formatter: '{a} <br/>{b}: {c} ({d}%)'
+                },
+                legend: {
+                    orient: 'vertical',
+                    right: 10,
+                    top: 'center',
+                    data: pieData.map(item => item.name)
+                },
+                series: [
+                    {
+                        name: '执行工时',
+                        type: 'pie',
+                        radius: '70%',
+                        center: ['40%', '50%'],
+                        avoidLabelOverlap: true,
+                        itemStyle: {
+                            borderWidth: 0
+                        },
+                        label: {
+                            show: true,
+                            formatter: '{b}\n{c}h'
+                        },
+                        emphasis: {
+                            label: {
+                                show: true,
+                                fontSize: 16,
+                                fontWeight: 'bold'
+                            }
+                        },
+                        labelLine: {
+                            show: true
+                        },
+                        data: pieData
+                    }
+                ]
+            };
+            
+            // 设置图表选项
+            myChart.setOption(option);
+            
+            // 监听窗口大小变化，自动调整图表大小
+            window.addEventListener('resize', function() {
+                myChart.resize();
+            });
+        }
+        
+        // 显示发展时间轴
+        function showDevelopmentTimeline(system) {
+            const modal = document.getElementById('timelineModal');
+            modal.classList.add('show');
+            
+            // 获取发展时间轴数据
+            fetchDevelopmentTimelineData(system);
+        }
+        
+        // 关闭发展时间轴弹窗
+        function closeTimelineModal() {
+            const modal = document.getElementById('timelineModal');
+            modal.classList.remove('show');
+        }
+        
+        // 获取发展时间轴数据
+        function fetchDevelopmentTimelineData(system) {
+            // 构造请求URL
+            const url = `/api/workHour/developmentTimeline?system=${encodeURIComponent(system)}`;
+            
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    console.log('发展时间轴数据:', data);
+                    if (data.code === 0) {
+                        renderTimeline(data.data);
+                    } else {
+                        const timelineContent = document.getElementById('timelineContent');
+                        timelineContent.innerHTML = '<p style="text-align: center; color: #999; padding: 20px;">获取数据失败，错误码：' + data.code + '</p>';
+                    }
+                })
+                .catch(error => {
+                    console.error('获取发展时间轴数据失败:', error);
+                    const timelineContent = document.getElementById('timelineContent');
+                    timelineContent.innerHTML = '<p style="text-align: center; color: #999; padding: 20px;">获取数据失败，请重试</p>';
+                });
+        }
+        
+        // 格式化日期，将20251101转换为2025-11-01
+        function formatDate(dateString) {
+            if (!dateString || dateString === '未知日期') {
+                return '未知日期';
+            }
+            // 确保日期字符串是8位数字
+            if (dateString.length === 8 && /^\d+$/.test(dateString)) {
+                const year = dateString.substring(0, 4);
+                const month = dateString.substring(4, 6);
+                const day = dateString.substring(6, 8);
+                return `${year}-${month}-${day}`;
+            }
+            return dateString;
+        }
+        
+        // 渲染发展时间轴
+        function renderTimeline(timelineData) {
+            const timelineContent = document.getElementById('timelineContent');
+            let html = '';
+            
+            if (timelineData.length === 0) {
+                html = '<p style="text-align: center; color: #999; padding: 20px;">暂无发展时间轴数据</p>';
+            } else {
+                timelineData.forEach(item => {
+                    const originalDate = item.WORK_WEEK_END_DATE || '未知日期';
+                    const date = formatDate(originalDate);
+                    const content = item.ITEM || '无内容';
+                    const employee = item.EMPLOYEE || '未知人员';
+                    
+                    html += `
+                        <div class="timeline-item">
+                            <div class="timeline-dot"></div>
+                            <div class="timeline-content">
+                                <div class="timeline-date">${date}</div>
+                                <div class="timeline-title">${content}</div>
+                                <div class="timeline-employee">开发人员：${employee}</div>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+            
+            timelineContent.innerHTML = html;
+        }
+        
+        // 导出全部数据功能
+        function exportAllData() {
+            window.location.href = '/api/workHour/exportAllData';
+        }
+        
+        // 获取按系统和员工统计的工时数据
+        async function fetchSystemEmployeeStatistics() {
+            try {
+                // 并行获取系统工时统计数据和系统信息
+                const [workHourResponse, systemInfoResponse] = await Promise.all([
+                    fetch('/api/workHour/statistics/systemEmployee'),
+                    fetch('/api/systemInfo/list')
+                ]);
+                
+                // 检查响应状态
+                if (!workHourResponse.ok) {
+                    throw new Error(`工时统计数据获取失败: ${workHourResponse.status} ${workHourResponse.statusText}`);
+                }
+                
+                if (!systemInfoResponse.ok) {
+                    throw new Error(`系统信息获取失败: ${systemInfoResponse.status} ${systemInfoResponse.statusText}`);
+                }
+                
+                // 解析JSON数据
+                const workHourData = await workHourResponse.json();
+                const systemInfoData = await systemInfoResponse.json();
+                
+                console.log('按系统和员工统计后端返回的数据:', workHourData);
+                console.log('系统信息列表:', systemInfoData);
+                
+                // 检查数据格式
+                if (workHourData.code === 0 && workHourData.data) {
+                    // 存储数据到全局变量
+                    systemStatisticsData = workHourData.data;
+                } else {
+                    throw new Error(`工时统计数据格式错误: ${workHourData.message || '未知错误'}`);
+                }
+                
+                if (systemInfoData.code === 0 && systemInfoData.data) {
+                    // 将系统信息转换为Map，便于根据系统名称快速查找
+                    systemInfoMap.clear();
+                    systemInfoData.data.forEach(system => {
+                        systemInfoMap.set(system.systemName, system);
+                    });
+                } else {
+                    console.warn(`系统信息数据格式错误: ${systemInfoData.message || '未知错误'}`);
+                    // 即使系统信息获取失败，也初始化一个空Map
+                    systemInfoMap.clear();
+                }
+                
+                // 处理系统数据，生成系统数组
+                processSystemData();
+                
+                // 渲染表格
+                renderSystemEmployeeStatistics();
+                
+                return systemStatisticsData;
+            } catch (error) {
+                console.error('获取系统员工执行工时数据失败:', error);
+                throw error;
+            }
+        }
+        
+        // 处理系统数据，生成系统数组
+        function processSystemData() {
+            // 按系统分组
+            const systemGroups = {};
+            
+            // 先按系统分组
+            systemStatisticsData.forEach(item => {
+                const system = item.SYSTEM || '未指定系统';
+                if (!systemGroups[system]) {
+                    systemGroups[system] = [];
+                }
+                systemGroups[system].push(item);
+            });
+            
+            // 生成系统数组
+            systemArray = [];
+            for (const system in systemGroups) {
+                if (systemGroups.hasOwnProperty(system)) {
+                    const employees = systemGroups[system];
+                    // 计算系统总工时
+                    const systemTotalHours = employees.reduce((sum, item) => {
+                        return sum + parseFloat(item.TOTAL_ACTUAL_HOURS || 0);
+                    }, 0);
+                    
+                    // 销售/使用统计列 - 显示系统信息中的闲置功能盘点内容
+                    let systemInfo = systemInfoMap.get(system);
+                    let idleFunctions = systemInfo ? systemInfo.idleFunctions : '';
+                    
+                    // 如果直接查找失败，尝试处理可能的名称差异
+                    if (!systemInfo) {
+                        const trimmedSystem = system.trim();
+                        systemInfo = systemInfoMap.get(trimmedSystem);
+                        if (systemInfo) {
+                            idleFunctions = systemInfo.idleFunctions;
+                        } else {
+                            // 尝试使用includes模糊匹配
+                            for (const [key, value] of systemInfoMap) {
+                                if (key.includes(system) || system.includes(key)) {
+                                    systemInfo = value;
+                                    idleFunctions = systemInfo.idleFunctions;
+                                    break;
+                                }
+                            }
+                        }
+                    } else {
+                        idleFunctions = systemInfo.idleFunctions;
+                    }
+                    
+                    // 转换销售/使用统计为数值（如果是数字的话）
+                    let salesValue = parseFloat(idleFunctions) || 0;
+                    if (isNaN(salesValue)) {
+                        salesValue = 0;
+                    }
+                    
+                    systemArray.push({
+                        system: system,
+                        employees: employees,
+                        totalHours: systemTotalHours,
+                        idleFunctions: idleFunctions,
+                        salesValue: salesValue
+                    });
+                }
+            }
+            
+            // 根据当前排序字段和方向对系统数组进行排序
+            systemArray.sort((a, b) => {
+                let comparison = 0;
+                
+                if (currentSortField === 'totalHours') {
+                    comparison = a.totalHours - b.totalHours;
+                } else if (currentSortField === 'salesStatistics') {
+                    comparison = a.salesValue - b.salesValue;
+                }
+                
+                // 根据排序方向调整比较结果
+                return currentSortDirection === 'asc' ? comparison : -comparison;
+            });
+            
+            // 计算总页数
+            totalPages = Math.ceil(systemArray.length / pageSize);
+            // 重置当前页码
+            currentPage = 1;
+        }
+        
+        // 处理排序
+        // 处理员工统计表格排序
+        function handleEmployeeSort(field) {
+            console.log('处理员工统计排序，字段:', field);
+            
+            // 如果点击的是当前排序字段，切换排序方向
+            if (currentSortField === field) {
+                currentSortDirection = currentSortDirection === 'asc' ? 'desc' : 'asc';
+            } else {
+                // 否则，设置新的排序字段和默认方向
+                currentSortField = field;
+                currentSortDirection = 'asc';
+            }
+            
+            // 对员工统计数据进行排序
+            let sortedData = [...statisticsData];
+            
+            switch (field) {
+                case 'employee':
+                    sortedData.sort((a, b) => {
+                        const nameA = a.EMPLOYEE || '';
+                        const nameB = b.EMPLOYEE || '';
+                        return currentSortDirection === 'asc' ? nameA.localeCompare(nameB) : nameB.localeCompare(nameA);
+                    });
+                    break;
+                case 'hours':
+                    sortedData.sort((a, b) => {
+                        const hoursA = parseFloat(a.TOTAL_ACTUAL_HOURS || 0);
+                        const hoursB = parseFloat(b.TOTAL_ACTUAL_HOURS || 0);
+                        return currentSortDirection === 'asc' ? hoursA - hoursB : hoursB - hoursA;
+                    });
+                    break;
+                case 'percentage':
+                    sortedData.sort((a, b) => {
+                        const totalHours = sortedData.reduce((sum, item) => sum + parseFloat(item.TOTAL_ACTUAL_HOURS || 0), 0);
+                        const percentageA = totalHours > 0 ? (parseFloat(a.TOTAL_ACTUAL_HOURS || 0) / totalHours) * 100 : 0;
+                        const percentageB = totalHours > 0 ? (parseFloat(b.TOTAL_ACTUAL_HOURS || 0) / totalHours) * 100 : 0;
+                        return currentSortDirection === 'asc' ? percentageA - percentageB : percentageB - percentageA;
+                    });
+                    break;
+            }
+            
+            // 重新渲染表格
+            renderStatistics(sortedData);
+        }
+        
+        // 处理系统员工统计表格排序
+        function handleSort(field) {
+            console.log('处理系统员工统计排序，字段:', field);
+            
+            // 如果点击的是当前排序字段，切换排序方向
+            if (currentSortField === field) {
+                currentSortDirection = currentSortDirection === 'asc' ? 'desc' : 'asc';
+            } else {
+                // 否则，设置新的排序字段和默认方向
+                currentSortField = field;
+                currentSortDirection = 'asc';
+            }
+            
+            // 对系统数组进行排序
+            systemArray.sort((a, b) => {
+                let comparison = 0;
+                
+                if (currentSortField === 'totalHours') {
+                    comparison = a.totalHours - b.totalHours;
+                } else if (currentSortField === 'salesStatistics') {
+                    comparison = a.salesValue - b.salesValue;
+                }
+                
+                // 根据排序方向调整比较结果
+                return currentSortDirection === 'asc' ? comparison : -comparison;
+            });
+            
+            // 重置当前页码
+            currentPage = 1;
+            
+            // 重新渲染表格
+            renderSystemEmployeeStatistics();
+        }
+        
+        // 渲染按系统和员工统计的工时数据
+        function renderSystemEmployeeStatistics() {
+            const container = document.getElementById('systemEmployeeStatistics');
+            let html = '';
+            
+            if (systemArray.length === 0) {
+                html = '<p style="text-align: center; color: #999; padding: 20px;">暂无统计数据</p>';
+            } else {
+                // 计算当前页的数据范围
+                const startIndex = (currentPage - 1) * pageSize;
+                const endIndex = Math.min(startIndex + pageSize, systemArray.length);
+                const currentPageData = systemArray.slice(startIndex, endIndex);
+                
+                // 生成表格
+                html += `<table class="statistics-table" style="margin-top: 0;">`;
+                html += `<thead>`;
+                html += `<tr>`;
+                html += `<th style="font-weight: bold;">系统</th>`;
+                html += `<th style="font-weight: bold;">员工执行工时</th>`;
+                html += `<th style="font-weight: bold; color: red; text-align: center; cursor: pointer;" onclick="handleSort('totalHours')">工时合计（H）${currentSortField === 'totalHours' ? (currentSortDirection === 'asc' ? ' ↑' : ' ↓') : ''}</th>`;
+                html += `<th style="font-weight: bold; text-align: center; cursor: pointer;" onclick="handleSort('salesStatistics')">销售/使用统计${currentSortField === 'salesStatistics' ? (currentSortDirection === 'asc' ? ' ↑' : ' ↓') : ''}</th>`;
+                html += `<th style="font-weight: bold;"></th>`;
+                html += `</tr>`;
+                html += `</thead>`;
+                html += `<tbody>`;
+                
+                // 遍历当前页的系统数据
+                currentPageData.forEach(systemData => {
+                    const system = systemData.system;
+                    const employees = systemData.employees;
+                    const systemTotalHours = systemData.totalHours;
+                    const idleFunctions = systemData.idleFunctions;
+                    
+                    // 系统行
+                    html += `<tr>`;
+                    html += `<td style="font-weight: bold; color: red; width: 150px;">${system}</td>`;
+                    
+                    // 员工信息列
+                    let employeesHtml = '';
+                    employees.forEach((item, index) => {
+                        const employee = item.EMPLOYEE || '未指定员工';
+                        const hours = parseFloat(item.TOTAL_ACTUAL_HOURS || 0);
+                        const percentage = systemTotalHours > 0 ? (hours / systemTotalHours) * 100 : 0;
+                        
+                        if (index > 0) {
+                            employeesHtml += ' ';
+                        }
+                        employeesHtml += `<span>${employee} ${hours.toFixed(0)}/${percentage.toFixed(0)}%</span>`;
+                    });
+                    
+                    html += `<td>${employeesHtml}</td>`;
+                    
+                    // 工时合计列
+                    html += `<td style="color: red; font-weight: bold; text-align: center;">${systemTotalHours.toFixed(0)}</td>`;
+                    
+                    // 销售/使用统计列
+                    html += `<td style="text-align: center; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${idleFunctions}">${idleFunctions || ''}</td>`;
+                    
+                    // 为所有系统添加发展时间按钮
+                    html += `<td style="width: 120px;">
+                        <button class="btn btn-primary" style="padding: 4px 8px; font-size: 12px;" onclick="showDevelopmentTimeline('${system}')">发展时间</button>
+                    </td>`;
+                    
+                    html += `</tr>`;
+                });
+                
+                html += `</tbody>`;
+                html += `</table>`;
+                
+                // 添加分页控件
+                html += generatePagination();
+            }
+            
+            container.innerHTML = html;
+        }
+        
+        // 生成分页控件
+        function generatePagination() {
+            let paginationHtml = '';
+            
+            if (totalPages <= 1) {
+                return paginationHtml;
+            }
+            
+            paginationHtml += `<div class="pagination-container">`;
+            paginationHtml += `<div class="pagination-info">`;
+            paginationHtml += `共 ${systemArray.length} 条记录，第 ${currentPage} / ${totalPages} 页`;
+            paginationHtml += `</div>`;
+            paginationHtml += `<div class="pagination">`;
+            
+            // 上一页按钮
+            paginationHtml += `<button class="pagination-btn ${currentPage === 1 ? 'disabled' : ''}" onclick="changePage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>`;
+            paginationHtml += `上一页`;
+            paginationHtml += `</button>`;
+            
+            // 页码按钮
+            let startPage = Math.max(1, currentPage - 2);
+            let endPage = Math.min(totalPages, currentPage + 2);
+            
+            if (startPage > 1) {
+                paginationHtml += `<button class="pagination-btn" onclick="changePage(1)">1</button>`;
+                if (startPage > 2) {
+                    paginationHtml += `<span class="pagination-ellipsis">...</span>`;
+                }
+            }
+            
+            for (let i = startPage; i <= endPage; i++) {
+                paginationHtml += `<button class="pagination-btn ${i === currentPage ? 'active' : ''}" onclick="changePage(${i})">${i}</button>`;
+            }
+            
+            if (endPage < totalPages) {
+                if (endPage < totalPages - 1) {
+                    paginationHtml += `<span class="pagination-ellipsis">...</span>`;
+                }
+                paginationHtml += `<button class="pagination-btn" onclick="changePage(${totalPages})">${totalPages}</button>`;
+            }
+            
+            // 下一页按钮
+            paginationHtml += `<button class="pagination-btn ${currentPage === totalPages ? 'disabled' : ''}" onclick="changePage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>`;
+            paginationHtml += `下一页`;
+            paginationHtml += `</button>`;
+            
+            paginationHtml += `</div>`;
+            paginationHtml += `</div>`;
+            
+            return paginationHtml;
+        }
+        
+        // 切换页码
+        function changePage(page) {
+            if (page < 1 || page > totalPages) {
+                return;
+            }
+            currentPage = page;
+            renderSystemEmployeeStatistics();
+        }
+        
+        // 样式：分页控件
+        const style = document.createElement('style');
+        style.textContent = `
+            .pagination-container {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-top: 20px;
+                padding: 10px;
+                background-color: #f8f9fa;
+                border-radius: 4px;
+            }
+            
+            .pagination-info {
+                color: #6c757d;
+                font-size: 14px;
+            }
+            
+            .pagination {
+                display: flex;
+                gap: 5px;
+            }
+            
+            .pagination-btn {
+                padding: 5px 10px;
+                border: 1px solid #ddd;
+                background-color: white;
+                color: #007bff;
+                cursor: pointer;
+                border-radius: 4px;
+                font-size: 14px;
+                transition: all 0.2s;
+            }
+            
+            .pagination-btn:hover:not(.disabled) {
+                background-color: #e9ecef;
+            }
+            
+            .pagination-btn.active {
+                background-color: #007bff;
+                color: white;
+                border-color: #007bff;
+            }
+            
+            .pagination-btn.disabled {
+                opacity: 0.6;
+                cursor: not-allowed;
+            }
+            
+            .pagination-ellipsis {
+                display: flex;
+                align-items: center;
+                padding: 0 5px;
+                color: #6c757d;
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>

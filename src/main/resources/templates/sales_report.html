@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <title>销售数据报表</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/static/layui/css/layui.css">
+    <style>
+        body {
+            font-family: "Microsoft YaHei", sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+            color: #333;
+        }
+        .search-bar {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .data-section {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .data-section h2 {
+            margin-top: 0;
+            margin-bottom: 20px;
+            font-size: 18px;
+            color: #333;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+        }
+        .table-container {
+            margin-bottom: 20px;
+        }
+        .layui-table th {
+            background-color: #f8f8f8;
+            font-weight: bold;
+        }
+        .highlight-row {
+            background-color: #fff3cd !important;
+        }
+        .btn-export {
+            background-color: #5cb85c;
+            color: white;
+        }
+        .btn-export:hover {
+            background-color: #4cae4c;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>销售数据报表</h1>
+            <div class="search-bar">
+                <div class="layui-input-inline">
+                    <input type="text" id="monthPicker" placeholder="选择月份" autocomplete="off" class="layui-input">
+                </div>
+                <button class="layui-btn layui-btn-primary" onclick="queryData()">查询</button>
+                <button class="layui-btn btn-export" onclick="exportToExcel()">导出Excel</button>
+                <button class="layui-btn btn-export" onclick="exportYearSummary()">导出全年汇总</button>
+            </div>
+        </div>
+
+        <!-- 系统访问统计 -->
+        <div class="data-section">
+            <h2>系统访问统计</h2>
+            <div class="table-container">
+                <table class="layui-table" id="systemTable" lay-filter="systemTable"></table>
+            </div>
+        </div>
+
+        <!-- 销售平台数据 -->
+        <div class="data-section">
+            <h2>销售平台数据</h2>
+            <div class="table-container">
+                <table class="layui-table" id="salesTable" lay-filter="salesTable"></table>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/layui/layui.js"></script>
+    <script type="text/javascript" th:inline="none">
+        // 声明全局变量
+        var table, layer;
+
+        // 页面加载完成后初始化
+        layui.use(['table', 'laydate', 'layer'], function() {
+            table = layui.table;
+            var laydate = layui.laydate;
+            layer = layui.layer;
+
+            // 初始化月份选择器
+            laydate.render({
+                elem: '#monthPicker',
+                type: 'month',
+                format: 'yyyyMM',
+                value: new Date().toISOString().slice(0, 7).replace('-', ''),
+                done: function(value) {
+                    console.log('选择的月份:', value);
+                }
+            });
+
+            // 初始化表格
+            initTables();
+        });
+
+        // 初始化表格
+        function initTables() {
+            // 系统访问统计表格
+            table.render({
+                elem: '#systemTable',
+                id: 'systemTable', // 添加id属性
+                cols: [[
+                    {field: 'systemName', title: '系统名称', width: 150, align: 'center'},
+                    {field: 'visitorCount', title: '访问人数', width: 120, align: 'center'},
+                    {field: 'usageCount', title: '使用/访问次数', width: 150, align: 'center'}
+                ]],
+                data: [],
+                page: false,
+                limit: 100
+            });
+
+            // 销售平台数据表格
+            table.render({
+                elem: '#salesTable',
+                id: 'salesTable', // 添加id属性
+                cols: [[
+                    {field: 'platformName', title: '销售平台', width: 200, align: 'center'},
+                    {field: 'orderCount', title: '订单量', width: 120, align: 'center'},
+                    {field: 'salesAmount', title: '销售额', width: 150, align: 'center', templet: function(d) {
+                        return d.salesAmount.toFixed(2) + ' 元';
+                    }}
+                ]],
+                data: [],
+                page: false,
+                limit: 100
+            });
+
+            // 默认加载当前月份数据
+            queryData();
+        }
+
+        // 查询数据
+        function queryData() {
+            var month = document.getElementById('monthPicker').value;
+            if (!month) {
+                layer.msg('请选择月份', {icon: 2});
+                return;
+            }
+
+            // 加载系统访问数据
+            fetch(`/api/sales/report?month=${month}`)
+                .then(response => response.json())
+                .then(data => {
+                    console.log('获取的数据:', data);
+                    renderTables(data);
+                })
+                .catch(err => {
+                    console.error('查询数据失败:', err);
+                    layer.msg('查询数据失败', {icon: 2});
+                });
+        }
+
+        // 渲染表格数据
+        function renderTables(data) {
+            // 直接使用全局的table变量，避免重复加载模块
+            table.reload('systemTable', {
+                data: data.systemAccess || []
+            });
+
+            table.reload('salesTable', {
+                data: data.salesPlatforms || []
+            });
+        }
+
+        // 导出Excel
+        function exportToExcel() {
+            var month = document.getElementById('monthPicker').value;
+            if (!month) {
+                layer.msg('请选择月份', {icon: 2});
+                return;
+            }
+
+            // 调用导出接口
+            window.location.href = `/api/sales/export?month=${month}`;
+        }
+        
+        // 导出全年汇总Excel
+        function exportYearSummary() {
+            // 调用导出全年汇总接口
+            window.location.href = `/api/sales/exportYearSummary`;
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <title>工时统计报表</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/static/layui/css/layui.css">
+    <!-- 引入ECharts库 -->
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <style>
+        body {
+            font-family: "Microsoft YaHei", sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        .header {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .header h1 {
+            color: #333;
+            margin: 0;
+            font-size: 24px;
+        }
+        .section {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .section h2 {
+            color: #333;
+            margin-top: 0;
+            font-size: 18px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        /* 操作按钮样式 */
+        .action-buttons {
+            margin-bottom: 20px;
+            text-align: right;
+        }
+        .btn {
+            display: inline-block;
+            padding: 8px 16px;
+            margin-left: 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+            text-decoration: none;
+        }
+        .btn-primary {
+            background-color: #1E9FFF;
+            color: white;
+        }
+        .btn-primary:hover {
+            background-color: #40a9ff;
+        }
+        .btn-back {
+            background-color: #5FB878;
+            color: white;
+        }
+        .btn-back:hover {
+            background-color: #73d13d;
+        }
+        /* 表格样式 */
+        .statistics-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            overflow-x: auto;
+            display: block;
+        }
+        .statistics-table th,
+        .statistics-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+            min-width: 120px;
+        }
+        .statistics-table th {
+            background-color: #f9f9f9;
+            font-weight: bold;
+            color: #333;
+            position: sticky;
+            top: 0;
+        }
+        .statistics-table tr:hover {
+            background-color: #f5f5f5;
+        }
+        /* 总计行样式 */
+        .total-row {
+            background-color: #f0f0f0;
+            font-weight: bold;
+        }
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .action-buttons {
+                text-align: center;
+            }
+            .btn {
+                margin: 5px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>工时统计报表</h1>
+        </div>
+
+        <!-- 工时统计 -->
+        <div class="section">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h2>按费用归属部门统计执行工时合计</h2>
+                <div class="action-buttons">
+                    <a href="http://cainiao.enjoyme.cn:9214/view/systemInfo" class="btn btn-primary" style="margin-right: 10px;">信息系统管理</a>
+                    <a href="http://cainiao.enjoyme.cn:9214/view/salesReport" class="btn btn-primary" style="margin-right: 10px;">销售数据报表</a>
+                    <a href="/view/workHour" class="btn btn-back">返回工时管理</a>
+                </div>
+            </div>
+            
+            <!-- 左右两栏布局 -->
+            <div style="display: flex; gap: 20px;">
+                <!-- 左侧：部门工时统计表格 -->
+                <div style="flex: 1; overflow-x: auto;">
+                    <table class="statistics-table">
+                        <thead>
+                            <tr>
+                                <th>费用归属部门</th>
+                                <th>执行工时合计</th>
+                                <th>占比</th>
+                                <th>排名</th>
+                            </tr>
+                        </thead>
+                        <tbody id="statisticsTableBody">
+                            <!-- 数据将通过JavaScript动态加载 -->
+                        </tbody>
+                        <tfoot>
+                            <tr class="total-row" id="totalRow">
+                                <td>总计</td>
+                                <td id="totalHours">0.00</td>
+                                <td>100.00%</td>
+                                <td></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+                
+                <!-- 右侧：部门工时饼状图 -->
+                <div style="flex: 1; height: 400px; background-color: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                    <div id="departmentPieChart" style="width: 100%; height: 100%;"></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 按系统统计执行工时合计 -->
+        <div id="systemStatisticsSection" class="section">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h2>按系统统计执行工时合计</h2>
+            </div>
+            
+            <!-- 左右两栏布局 -->
+            <div style="display: flex; gap: 20px;">
+                <!-- 左侧：系统工时统计表格 -->
+                <div class="table-container" style="flex: 1; overflow-x: auto;">
+                    <table class="statistics-table">
+                        <thead>
+                            <tr>
+                                <th>系统</th>
+                                <th>执行工时合计</th>
+                                <th>占比</th>
+                                <th>排名</th>
+                            </tr>
+                        </thead>
+                        <tbody id="systemStatisticsTableBody">
+                            <!-- 数据将通过JavaScript动态加载 -->
+                        </tbody>
+                        <tfoot>
+                            <tr class="total-row" id="systemTotalRow">
+                                <td>总计</td>
+                                <td id="systemTotalHours">0.00</td>
+                                <td>100.00%</td>
+                                <td></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+                
+                <!-- 右侧：饼状图 -->
+                <div style="flex: 1; height: 400px; background-color: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                    <div id="systemPieChart" style="width: 100%; height: 100%;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 页面加载完成后渲染工时统计数据
+        document.addEventListener('DOMContentLoaded', function() {
+            fetchWorkHourStatistics();
+            fetchSystemWorkHourStatistics();
+        });
+        
+        // 按系统统计执行工时合计的分页变量
+        let systemStatisticsData = [];
+        let systemCurrentPage = 1;
+        let systemPageSize = 10;
+        let systemTotalPages = 1;
+
+        // 获取按费用归属部门统计的工时数据
+        function fetchWorkHourStatistics() {
+            fetch('/api/workHour/statistics')
+                .then(response => response.json())
+                .then(data => {
+                    console.log('按部门统计后端返回的数据:', data);
+                    if (data.code === 0) {
+                        renderStatistics(data.data);
+                    }
+                })
+                .catch(error => {
+                    console.error('获取按部门统计的工时数据失败:', error);
+                });
+        }
+
+        // 获取按系统统计的工时数据
+        function fetchSystemWorkHourStatistics() {
+            fetch('/api/workHour/statistics/system')
+                .then(response => response.json())
+                .then(data => {
+                    console.log('按系统统计后端返回的数据:', data);
+                    if (data.code === 0) {
+                        // 存储数据到全局变量
+                        systemStatisticsData = data.data;
+                        // 计算总页数
+                        systemTotalPages = Math.ceil(systemStatisticsData.length / systemPageSize);
+                        // 重置当前页码
+                        systemCurrentPage = 1;
+                        // 渲染分页数据
+                        renderSystemStatistics();
+                    }
+                })
+                .catch(error => {
+                    console.error('获取按系统统计的工时数据失败:', error);
+                });
+        }
+
+        // 渲染按费用归属部门统计的工时数据
+        function renderStatistics(statisticsList) {
+            const tbody = document.getElementById('statisticsTableBody');
+            let html = '';
+            let totalHours = 0;
+            
+            // 先计算总工时
+            statisticsList.forEach(item => {
+                const hours = parseFloat(item.TOTAL_ACTUAL_HOURS || 0);
+                totalHours += hours;
+            });
+            
+            if (statisticsList.length === 0) {
+                html = '<tr><td colspan="4" style="text-align: center; color: #999; padding: 20px;">暂无统计数据</td></tr>';
+            } else {
+                statisticsList.forEach((item, index) => {
+                    // 使用正确的大写字段名，根据浏览器控制台的返回结果
+                    const department = item.COST_DEPARTMENT || '未指定部门';
+                    const hours = parseFloat(item.TOTAL_ACTUAL_HOURS || 0);
+                    // 计算占比
+                    const percentage = totalHours > 0 ? (hours / totalHours) * 100 : 0;
+                    
+                    html += `
+                        <tr>
+                            <td>${department}</td>
+                            <td>${hours.toFixed(2)}</td>
+                            <td>${percentage.toFixed(2)}%</td>
+                            <td>${index + 1}</td>
+                        </tr>
+                    `;
+                });
+            }
+            
+            tbody.innerHTML = html;
+            document.getElementById('totalHours').textContent = totalHours.toFixed(2);
+            
+            // 绘制部门工时饼状图
+            drawDepartmentPieChart(statisticsList);
+        }
+        
+        // 渲染按系统统计的工时数据
+        function renderSystemStatistics() {
+            const tbody = document.getElementById('systemStatisticsTableBody');
+            let html = '';
+            let totalHours = 0;
+            
+            // 先计算总工时
+            systemStatisticsData.forEach(item => {
+                const hours = parseFloat(item.TOTAL_ACTUAL_HOURS || 0);
+                totalHours += hours;
+            });
+            
+            if (systemStatisticsData.length === 0) {
+                html = '<tr><td colspan="4" style="text-align: center; color: #999; padding: 20px;">暂无统计数据</td></tr>';
+            } else {
+                // 计算当前页的数据范围
+                const startIndex = (systemCurrentPage - 1) * systemPageSize;
+                const endIndex = Math.min(startIndex + systemPageSize, systemStatisticsData.length);
+                const currentPageData = systemStatisticsData.slice(startIndex, endIndex);
+                
+                currentPageData.forEach((item, index) => {
+                    // 使用正确的大写字段名，根据浏览器控制台的返回结果
+                    const system = item.SYSTEM || '未指定系统';
+                    const hours = parseFloat(item.TOTAL_ACTUAL_HOURS || 0);
+                    // 计算占比
+                    const percentage = totalHours > 0 ? (hours / totalHours) * 100 : 0;
+                    // 计算实际排名（考虑分页）
+                    const actualIndex = startIndex + index;
+                    
+                    html += `
+                        <tr>
+                            <td>${system}</td>
+                            <td>${hours.toFixed(2)}</td>
+                            <td>${percentage.toFixed(2)}%</td>
+                            <td>${actualIndex + 1}</td>
+                        </tr>
+                    `;
+                });
+            }
+            
+            tbody.innerHTML = html;
+            document.getElementById('systemTotalHours').textContent = totalHours.toFixed(2);
+            
+            // 绘制系统执行工时饼状图
+            drawPieChart(systemStatisticsData);
+            
+            // 添加分页控件
+            generateSystemPagination();
+        }
+        
+        // 生成分页控件
+        function generateSystemPagination() {
+            // 先移除已存在的分页控件
+            const existingPagination = document.getElementById('systemPagination');
+            if (existingPagination) {
+                existingPagination.remove();
+            }
+            
+            // 如果只有一页，不显示分页控件
+            if (systemTotalPages <= 1) {
+                return;
+            }
+            
+            // 生成新的分页控件
+            let paginationHtml = '';
+            
+            paginationHtml += `<div id="systemPagination" class="pagination-container">`;
+            paginationHtml += `<div class="pagination-info">`;
+            paginationHtml += `共 ${systemStatisticsData.length} 条记录，第 ${systemCurrentPage} / ${systemTotalPages} 页`;
+            paginationHtml += `</div>`;
+            paginationHtml += `<div class="pagination">`;
+            
+            // 上一页按钮
+            paginationHtml += `<button class="pagination-btn ${systemCurrentPage === 1 ? 'disabled' : ''}" onclick="changeSystemPage(${systemCurrentPage - 1})" ${systemCurrentPage === 1 ? 'disabled' : ''}>`;
+            paginationHtml += `上一页`;
+            paginationHtml += `</button>`;
+            
+            // 页码按钮
+            let startPage = Math.max(1, systemCurrentPage - 2);
+            let endPage = Math.min(systemTotalPages, systemCurrentPage + 2);
+            
+            if (startPage > 1) {
+                paginationHtml += `<button class="pagination-btn" onclick="changeSystemPage(1)">1</button>`;
+                if (startPage > 2) {
+                    paginationHtml += `<span class="pagination-ellipsis">...</span>`;
+                }
+            }
+            
+            for (let i = startPage; i <= endPage; i++) {
+                paginationHtml += `<button class="pagination-btn ${i === systemCurrentPage ? 'active' : ''}" onclick="changeSystemPage(${i})">${i}</button>`;
+            }
+            
+            if (endPage < systemTotalPages) {
+                if (endPage < systemTotalPages - 1) {
+                    paginationHtml += `<span class="pagination-ellipsis">...</span>`;
+                }
+                paginationHtml += `<button class="pagination-btn" onclick="changeSystemPage(${systemTotalPages})">${systemTotalPages}</button>`;
+            }
+            
+            // 下一页按钮
+            paginationHtml += `<button class="pagination-btn ${systemCurrentPage === systemTotalPages ? 'disabled' : ''}" onclick="changeSystemPage(${systemCurrentPage + 1})" ${systemCurrentPage === systemTotalPages ? 'disabled' : ''}>`;
+            paginationHtml += `下一页`;
+            paginationHtml += `</button>`;
+            paginationHtml += `</div>`;
+            paginationHtml += `</div>`;
+            
+            // 将分页控件添加到系统统计部分的最下方
+            const systemStatisticsSection = document.querySelector('#systemStatisticsSection');
+            if (systemStatisticsSection) {
+                systemStatisticsSection.insertAdjacentHTML('beforeend', paginationHtml);
+            }
+        }
+        
+        // 切换页码
+        function changeSystemPage(page) {
+            if (page < 1 || page > systemTotalPages) {
+                return;
+            }
+            systemCurrentPage = page;
+            renderSystemStatistics();
+        }
+        
+        // 样式：分页控件
+        const style = document.createElement('style');
+        style.textContent = `
+            .pagination-container {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                margin-top: 20px;
+                padding: 15px;
+                background-color: transparent;
+            }
+            
+            .pagination-info {
+                color: #6c757d;
+                font-size: 14px;
+                margin-bottom: 10px;
+                text-align: center;
+            }
+            
+            .pagination {
+                display: flex;
+                gap: 8px;
+                align-items: center;
+            }
+            
+            .pagination-btn {
+                padding: 8px 12px;
+                min-width: 36px;
+                height: 36px;
+                border: 1px solid #e6e6e6;
+                background-color: white;
+                color: #333;
+                cursor: pointer;
+                border-radius: 4px;
+                font-size: 14px;
+                text-align: center;
+                transition: all 0.3s;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+            }
+            
+            .pagination-btn:hover:not(.disabled) {
+                background-color: #f2f2f2;
+                border-color: #dcdcdc;
+            }
+            
+            .pagination-btn.active {
+                background-color: #1E9FFF;
+                color: white;
+                border-color: #1E9FFF;
+            }
+            
+            .pagination-btn.disabled {
+                opacity: 0.5;
+                cursor: not-allowed;
+            }
+            
+            .pagination-ellipsis {
+                display: flex;
+                align-items: center;
+                padding: 0 10px;
+                color: #999;
+                font-size: 14px;
+            }
+        `;
+        document.head.appendChild(style);
+        
+        // 绘制系统执行工时饼状图
+        function drawPieChart(statisticsList) {
+            // 准备饼状图数据
+            let pieData = [];
+            let totalHours = 0;
+            
+            // 计算总工时
+            statisticsList.forEach(item => {
+                const hours = parseFloat(item.TOTAL_ACTUAL_HOURS || 0);
+                totalHours += hours;
+            });
+            
+            // 处理前10个系统，其余归为"其他"
+            const topSystems = statisticsList.slice(0, 10);
+            let otherHours = 0;
+            
+            topSystems.forEach(item => {
+                const system = item.SYSTEM || '未指定系统';
+                const hours = parseFloat(item.TOTAL_ACTUAL_HOURS || 0);
+                
+                pieData.push({
+                    name: system,
+                    value: hours
+                });
+            });
+            
+            // 如果有超过10个系统，将剩余的归为"其他"
+            if (statisticsList.length > 10) {
+                for (let i = 10; i < statisticsList.length; i++) {
+                    const hours = parseFloat(statisticsList[i].TOTAL_ACTUAL_HOURS || 0);
+                    otherHours += hours;
+                }
+                
+                pieData.push({
+                    name: '其他',
+                    value: otherHours
+                });
+            }
+            
+            // 初始化ECharts实例
+            const chartDom = document.getElementById('systemPieChart');
+            const myChart = echarts.init(chartDom);
+            
+            // 配置饼状图选项
+            const option = {
+                title: {
+                    text: '系统执行工时分布',
+                    left: 'center'
+                },
+                tooltip: {
+                    trigger: 'item',
+                    formatter: '{a} <br/>{b}: {c} ({d}%)'
+                },
+                legend: {
+                    orient: 'vertical',
+                    right: 10,
+                    top: 'center',
+                    data: pieData.map(item => item.name)
+                },
+                series: [
+                    {
+                        name: '执行工时',
+                        type: 'pie',
+                        radius: '70%',
+                        center: ['40%', '50%'],
+                        avoidLabelOverlap: true,
+                        itemStyle: {
+                            borderWidth: 0
+                        },
+                        label: {
+                            show: true,
+                            formatter: '{b}\n{c}h'
+                        },
+                        emphasis: {
+                            label: {
+                                show: true,
+                                fontSize: 16,
+                                fontWeight: 'bold'
+                            }
+                        },
+                        labelLine: {
+                            show: true
+                        },
+                        data: pieData
+                    }
+                ]
+            };
+            
+            // 设置图表选项
+            myChart.setOption(option);
+            
+            // 监听窗口大小变化，自动调整图表大小
+            window.addEventListener('resize', function() {
+                myChart.resize();
+            });
+        }
+        
+        // 绘制部门执行工时饼状图
+        function drawDepartmentPieChart(statisticsList) {
+            // 准备饼状图数据
+            let pieData = [];
+            let totalHours = 0;
+            
+            // 计算总工时
+            statisticsList.forEach(item => {
+                const hours = parseFloat(item.TOTAL_ACTUAL_HOURS || 0);
+                totalHours += hours;
+            });
+            
+            // 处理所有部门数据
+            statisticsList.forEach(item => {
+                const department = item.COST_DEPARTMENT || '未指定部门';
+                const hours = parseFloat(item.TOTAL_ACTUAL_HOURS || 0);
+                
+                pieData.push({
+                    name: department,
+                    value: hours
+                });
+            });
+            
+            // 初始化ECharts实例
+            const chartDom = document.getElementById('departmentPieChart');
+            const myChart = echarts.init(chartDom);
+            
+            // 配置饼状图选项
+            const option = {
+                title: {
+                    text: '部门执行工时分布',
+                    left: 'center'
+                },
+                tooltip: {
+                    trigger: 'item',
+                    formatter: '{a} <br/>{b}: {c} ({d}%)'
+                },
+                legend: {
+                    orient: 'vertical',
+                    right: 10,
+                    top: 'center',
+                    data: pieData.map(item => item.name)
+                },
+                series: [
+                    {
+                        name: '执行工时',
+                        type: 'pie',
+                        radius: '70%',
+                        center: ['40%', '50%'],
+                        avoidLabelOverlap: true,
+                        itemStyle: {
+                            borderWidth: 0
+                        },
+                        label: {
+                            show: true,
+                            formatter: '{b}\n{c}h'
+                        },
+                        emphasis: {
+                            label: {
+                                show: true,
+                                fontSize: 16,
+                                fontWeight: 'bold'
+                            }
+                        },
+                        labelLine: {
+                            show: true
+                        },
+                        data: pieData
+                    }
+                ]
+            };
+            
+            // 设置图表选项
+            myChart.setOption(option);
+            
+            // 监听窗口大小变化，自动调整图表大小
+            window.addEventListener('resize', function() {
+                myChart.resize();
+            });
+        }
+    </script>
+</body>
+</html>

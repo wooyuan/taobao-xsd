@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <title>企业微信行为数据查询</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/static/layui/css/layui.css">
+    <style>
+        body {
+            font-family: "Microsoft YaHei", sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+            color: #333;
+        }
+        .search-bar {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .search-bar .layui-input-inline {
+            margin-right: 0;
+        }
+        .data-section {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .data-section h2 {
+            margin-top: 0;
+            margin-bottom: 20px;
+            font-size: 18px;
+            color: #333;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+        }
+        .layui-table th {
+            background-color: #f8f8f8;
+            font-weight: bold;
+        }
+        .btn-query {
+            background-color: #1E9FFF;
+        }
+        .btn-query:hover {
+            background-color: #0d8adb;
+        }
+        .btn-reset {
+            background-color: #FF5722;
+        }
+        .btn-reset:hover {
+            background-color: #e64a19;
+        }
+        .stats-card {
+            display: inline-block;
+            margin-right: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            min-width: 150px;
+        }
+        .stats-card .label {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+        .stats-card .value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>企业微信行为数据查询</h1>
+        </div>
+
+        <div class="data-section">
+            <h2>查询条件</h2>
+            <div class="search-bar">
+                <div class="layui-input-inline">
+                    <input type="text" id="startDate" placeholder="开始日期" autocomplete="off" class="layui-input">
+                </div>
+                <div class="layui-input-inline">
+                    <input type="text" id="endDate" placeholder="结束日期" autocomplete="off" class="layui-input">
+                </div>
+                <div class="layui-input-inline" style="width: 200px;">
+                    <select id="account" lay-filter="account">
+                        <option value="">全部品牌</option>
+                        <option value="jnr">jnr</option>
+                        <option value="enjoy">enjoy</option>
+                    </select>
+                </div>
+                <button class="layui-btn btn-query" onclick="queryData()">查询</button>
+                <button class="layui-btn btn-reset" onclick="resetForm()">重置</button>
+            </div>
+        </div>
+
+        <div class="data-section">
+            <h2>数据统计</h2>
+            <div id="stats">
+                <div class="stats-card">
+                    <div class="label">总记录数</div>
+                    <div class="value" id="totalCount">0</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="data-section">
+            <h2>查询结果</h2>
+            <table class="layui-table" id="dataTable" lay-filter="dataTable"></table>
+        </div>
+    </div>
+
+    <script src="/static/layui/layui.js"></script>
+    <script th:inline="none">
+        layui.use(['table', 'laydate', 'form'], function() {
+            var table = layui.table;
+            var laydate = layui.laydate;
+            var form = layui.form;
+            var $ = layui.jquery;
+
+            laydate.render({
+                elem: '#startDate',
+                type: 'date',
+                format: 'yyyy-MM-dd'
+            });
+
+            laydate.render({
+                elem: '#endDate',
+                type: 'date',
+                format: 'yyyy-MM-dd'
+            });
+
+            table.render({
+                elem: '#dataTable',
+                cols: [[
+                    {field: 'DAY_WID', title: '统计时间', width: 120, sort: true},
+                    {field: 'USER_NAME', title: '用户名', width: 120},
+                    {field: 'USERID', title: '用户ID', width: 120},
+                    {field: 'NEW_APPLY_CNT', title: '新增申请数', width: 100, sort: true},
+                    {field: 'NEW_CONTACT_CNT', title: '新增联系人', width: 100, sort: true},
+                    {field: 'CHAT_CNT', title: '聊天次数', width: 100, sort: true},
+                    {field: 'MESSAGE_CNT', title: '消息数', width: 100, sort: true},
+                    {field: 'REPLY_PERCENTAGE', title: '回复率', width: 100, sort: true},
+                    {field: 'AVG_REPLY_TIME', title: '平均回复时间', width: 120},
+                    {field: 'NEGATIVE_FEEDBACK_CNT', title: '负面反馈数', width: 120, sort: true},
+                    {field: 'TOTAL_CONTACT_CNT', title: '总联系数', width: 100, sort: true},
+                    {field: 'CREATIONDATE', title: '创建时间', width: 150}
+                ]],
+                page: true,
+                limit: 20,
+                limits: [10, 20, 50, 100],
+                data: []
+            });
+
+            window.queryData = function() {
+                var startDate = $('#startDate').val();
+                var endDate = $('#endDate').val();
+                var account = $('#account').val();
+
+                $.ajax({
+                    url: '/api/workwechat/query',
+                    type: 'GET',
+                    data: {
+                        startDate: startDate,
+                        endDate: endDate,
+                        account: account
+                    },
+                    success: function(res) {
+                        if (res.code === 200) {
+                            $('#totalCount').text(res.total);
+                            table.reload('dataTable', {
+                                data: res.data
+                            });
+                        } else {
+                            layer.msg(res.message, {icon: 2});
+                        }
+                    },
+                    error: function() {
+                        layer.msg('查询失败', {icon: 2});
+                    }
+                });
+            };
+
+            window.resetForm = function() {
+                $('#startDate').val('');
+                $('#endDate').val('');
+                $('#account').val('');
+                form.render('select');
+                $('#totalCount').text('0');
+                table.reload('dataTable', {
+                    data: []
+                });
+            };
+        });
+    </script>
+</body>
+</html>

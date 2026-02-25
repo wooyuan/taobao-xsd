@@ -66,6 +66,7 @@ public class AjaxResult extends HashMap<String, Object> {
     public AjaxResult(Type type, String msg) {
         super.put(CODE_TAG, type.value);
         super.put(MSG_TAG, msg);
+        super.put("success", type == Type.SUCCESS); // 添加success字段，适配前端
     }
 
     /**
@@ -78,6 +79,7 @@ public class AjaxResult extends HashMap<String, Object> {
     public AjaxResult(Type type, String msg, Object data) {
         super.put(CODE_TAG, type.value);
         super.put(MSG_TAG, msg);
+        super.put("success", type == Type.SUCCESS); // 添加success字段，适配前端
         if (null != data) {
             super.put(DATA_TAG, data);
         }
