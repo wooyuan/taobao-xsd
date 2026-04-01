@@ -33,11 +33,7 @@ public class ProcedureController {
         try {
             // 执行存储过程
             String procedureSql = "{call auto_ts_guonian(?)}";
-            jdbcTemplate.execute(procedureSql, (Map<String, Object> inParams) -> {
-                inParams.put("p_pi_id", piId);
-                return null;
-            });
-            
+            jdbcTemplate.update(procedureSql, piId);
             log.info("存储过程执行成功");
             result.put("code", 200);
             result.put("message", "存储过程执行成功");

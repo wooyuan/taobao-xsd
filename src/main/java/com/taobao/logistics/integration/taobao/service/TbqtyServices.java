@@ -82,6 +82,42 @@ public class TbqtyServices {
             return new JSONArray();
         }
     }
+
+    /**
+     * 查询商城出库单明细
+     * @param orderId 订单ID
+     * @return 包含订单明细数据的JSON数组
+     */
+    public JSONArray getOsOrderDetails(Long orderId) {
+        String sql = "  select b.id, b.ord_qty as qty, b.m_productalias_id,c.no  " +
+                "  from OS_ORDER@bj_70 a, OS_ORDERITEM@bj_70 B, m_product_alias@bj_70 c " +
+                "  where a.id = b.os_order_id " +
+                "  and b.m_productalias_id <> 697028 " +
+                "  and c.id = b.m_productalias_id " +
+                "  and a.id=?";
+        try {
+            List<JSONObject> orderDetails = jdbcTemplate.query(sql,
+                    new Object[]{orderId},
+                    (rs, rowNum) -> {
+                        JSONObject detail = new JSONObject();
+                        detail.put("id", rs.getLong("id"));                    // 订单明细ID
+                        detail.put("qty", rs.getInt("qty"));                   // 发货数量
+                        detail.put("m_productalias_id", rs.getLong("m_productalias_id")); // 条码ID
+                        detail.put("barcode_no", rs.getString("no"));            // 条码号
+                        return detail;
+                    });
+
+            JSONArray resultArray = new JSONArray();
+            resultArray.addAll(orderDetails);
+
+            log.info("成功查询到订单 {} 的 {} 条明细数据", orderId, orderDetails.size());
+            return resultArray;
+
+        } catch (Exception e) {
+            log.error("查询订单明细数据时发生异常，订单ID: {}", orderId, e);
+            return new JSONArray();
+        }
+    }
     
     /**
      * 查询当前有哪些门店库存满足条件的商品明细
@@ -103,9 +139,9 @@ public class TbqtyServices {
                     "AND c.c_store_id = d.id " +
                     "AND d.isactive = 'Y' " +
                     "AND a.id = ?";
-        
+
         try {
-            List<JSONObject> inventoryDetails = jdbcTemplate.query(sql, 
+            List<JSONObject> inventoryDetails = jdbcTemplate.query(sql,
                 new Object[]{orderId},
                 (rs, rowNum) -> {
                     JSONObject detail = new JSONObject();
@@ -117,13 +153,65 @@ public class TbqtyServices {
                     detail.put("barcode_no", rs.getString("no"));            // 条码号
                     return detail;
                 });
-            
+
             JSONArray resultArray = new JSONArray();
             resultArray.addAll(inventoryDetails);
-            
+
             log.info("成功查询到订单 {} 的 {} 个门店库存满足条件的商品明细", orderId, inventoryDetails.size());
             return resultArray;
-            
+
+        } catch (Exception e) {
+            log.error("查询门店库存满足条件的商品明细时发生异常，订单ID: {}", orderId, e);
+            return new JSONArray();
+        }
+    }
+
+
+    /**
+     * 根据商城出库单查询当前有哪些门店库存满足条件的商品明细
+     * @param orderId 订单ID
+     * @return 包含门店库存满足条件的商品明细数据的JSON数组
+     */
+    public JSONArray getOsStoreInventoryDetails(Long orderId) {
+        String sql = "SELECT d.id as c_store_id, d.name, c.qty-nvl(f2.qty,0) as qty, b.id, b.m_productalias_id,e.no " +
+                "                FROM OS_ORDER@bj_70 a, OS_ORDERITEM@bj_70 b, fa_storage@bj_70 c, c_store@bj_70 d,m_product_alias@bj_70 e,C_KCSTORE@bj_70 f ,onlineorderqty@bj_70 f2 " +
+                "                WHERE a.id = b.OS_ORDER_id  " +
+                "                AND b.m_product_id = c.m_product_id " +
+                "                AND b.m_attributesetinstance_id = c.m_attributesetinstance_id " +
+                "                AND d.C_STORE_BZ=1 " +
+                "                AND d.id=f.C_STORE_ID " +
+                "                AND f.isactive = 'Y' " +
+                "                and f2.c_store_id(+)=c.c_store_id " +
+                "                and f2.m_attributesetinstance_id(+)=c.m_attributesetinstance_id " +
+                "                and f2.m_product_id(+)=c.m_product_id " +
+                "                AND e.id=b.m_productalias_id " +
+                "                AND b.m_productalias_id<>697028 " +
+                "                AND c.qty >= b.ord_qty " +
+                "                and c.qty >=(b.ord_qty+nvl(f2.qty,0)) " +
+                "                AND d.id<>7564 " +
+                "                AND c.c_store_id = d.id " +
+                "                AND d.isactive = 'Y' " +
+                "                AND a.id = ? ";
+        try {
+            List<JSONObject> inventoryDetails = jdbcTemplate.query(sql,
+                    new Object[]{orderId},
+                    (rs, rowNum) -> {
+                        JSONObject detail = new JSONObject();
+                        detail.put("c_store_id", rs.getLong("c_store_id"));      // 门店ID
+                        detail.put("store_name", rs.getString("name"));           // 门店名称
+                        detail.put("store_qty", rs.getInt("qty"));                // 门店库存数量
+                        detail.put("order_item_id", rs.getLong("id"));            // 订单明细ID
+                        detail.put("m_productalias_id", rs.getLong("m_productalias_id")); // 条码ID
+                        detail.put("barcode_no", rs.getString("no"));            // 条码号
+                        return detail;
+                    });
+
+            JSONArray resultArray = new JSONArray();
+            resultArray.addAll(inventoryDetails);
+
+            log.info("成功查询到订单 {} 的 {} 个门店库存满足条件的商品明细", orderId, inventoryDetails.size());
+            return resultArray;
+
         } catch (Exception e) {
             log.error("查询门店库存满足条件的商品明细时发生异常，订单ID: {}", orderId, e);
             return new JSONArray();

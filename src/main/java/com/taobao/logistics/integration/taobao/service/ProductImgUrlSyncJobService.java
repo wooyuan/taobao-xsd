@@ -120,6 +120,16 @@ public class ProductImgUrlSyncJobService {
         log.info("开始执行产品图片URL同步任务");
         
         try {
+            // 0. 删除不在m_product表中的记录（清理无效数据）
+            String deleteSql = "DELETE FROM PRODUCT_IMGURL_ISOK@bj_70 a " +
+                              "WHERE NOT EXISTS (SELECT 1 " +
+                              "                FROM m_product@bj_70 b " +
+                              "                WHERE b.isactive = 'Y' " +
+                              "                AND a.m_product_id = b.id)";
+            
+            int deletedRows = jdbcTemplate.update(deleteSql);
+            log.info("清理无效数据完成，删除记录数：{}", deletedRows);
+            
             // 1. 同步新产品数据到PRODUCT_IMGURL_ISOK表
             String syncSql = "INSERT INTO PRODUCT_IMGURL_ISOK@bj_70 " +
                          "(ID, AD_CLIENT_ID, AD_ORG_ID, M_PRODUCT_ID, name, IMAGEURL, ISOK, OWNERID, MODIFIERID, CREATIONDATE, MODIFIEDDATE, ISACTIVE, year) " +
@@ -149,6 +159,78 @@ public class ProductImgUrlSyncJobService {
             int totalYUpdated = stats[1];
             int totalNUpdated = stats[2];
             
+            // 3. 插入数据到ON_QDRANT_PRODUCT表（基于m_dim12_id）- 暂时取消
+            /*
+            String insertSql = "INSERT INTO ON_QDRANT_PRODUCT ( " +
+                              "     id, creationdate, modifieddate,has_train, " +
+                              "     m_product_id, sku_name, img_url, rtype, code " +
+                              " ) " +
+                              " SELECT " +
+                              "     get_sequences('ON_QDRANT_PRODUCT'), " +
+                              "     a.modifieddate, " +
+                              "     a.modifieddate, " +
+                              "     'N', " +
+                              "     b.id, " +
+                              "     d.no, " +
+                              "     a.imageurl,    " +
+                              "     'Y', " +
+                              "     c.attribname   " +
+                              " FROM " +
+                              "     product_imgurl_isok@bj_70 a " +
+                              "     JOIN m_product@bj_70 b ON a.m_product_id = b.id " +
+                              "     JOIN m_dim@bj_70 c ON b.m_dim12_id = c.id " +
+                              "     JOIN m_product_alias@bj_70 d ON b.id = d.m_product_id " +
+                              " WHERE " +
+                              "     b.isactive = 'Y' " +
+                              "     AND b.m_dim12_id IS NOT NULL " +
+                              "     AND a.isok = 'N' " +
+                              "     AND to_number(to_char(a.modifieddate,'YYYYMMDD')) = to_number(to_char(SYSDATE,'YYYYMMDD')) " +
+                              "     AND NOT EXISTS ( " +
+                              "         SELECT 1 " +
+                              "         FROM ON_QDRANT_PRODUCT f " +
+                              "         WHERE f.sku_name = d.no " +
+                              "     )";
+            
+            int insertedRows = jdbcTemplate.update(insertSql);
+            log.info("插入ON_QDRANT_PRODUCT表完成（基于m_dim12_id），新增记录数：{}", insertedRows);
+            */
+            
+            // 4. 插入数据到ON_QDRANT_PRODUCT表（基于m_dim15_id）- 暂时取消
+            /*
+            String insertSqlDim15 = "INSERT INTO ON_QDRANT_PRODUCT ( " +
+                                   "     id, creationdate, modifieddate,has_train, " +
+                                   "     m_product_id, sku_name, img_url, rtype, code " +
+                                   " ) " +
+                                   " SELECT " +
+                                   "     get_sequences('ON_QDRANT_PRODUCT'), " +
+                                   "     a.modifieddate, " +
+                                   "     a.modifieddate, " +
+                                   "     'N', " +
+                                   "     b.id, " +
+                                   "     d.no, " +
+                                   "     a.imageurl,    " +
+                                   "     'Y', " +
+                                   "     c.attribname   " +
+                                   " FROM " +
+                                   "     product_imgurl_isok@bj_70 a " +
+                                   "     JOIN m_product@bj_70 b ON a.m_product_id = b.id " +
+                                   "     JOIN m_dim@bj_70 c ON b.m_dim15_id = c.id " +
+                                   "     JOIN m_product_alias@bj_70 d ON b.id = d.m_product_id " +
+                                   " WHERE " +
+                                   "     b.isactive = 'Y' " +
+                                   "     AND b.m_dim15_id IS NOT NULL " +
+                                   "     AND a.isok = 'N' " +
+                                   "     AND to_number(to_char(a.modifieddate,'YYYYMMDD')) = to_number(to_char(SYSDATE,'YYYYMMDD')) " +
+                                   "     AND NOT EXISTS ( " +
+                                   "         SELECT 1 " +
+                                   "         FROM ON_QDRANT_PRODUCT f " +
+                                   "         WHERE f.sku_name = d.no " +
+                                   "     )";
+            
+            int insertedRowsDim15 = jdbcTemplate.update(insertSqlDim15);
+            log.info("插入ON_QDRANT_PRODUCT表完成（基于m_dim15_id），新增记录数：{}", insertedRowsDim15);
+            */
+            
             // 返回详细统计结果
             return new SyncResult(totalRecords, totalYUpdated, totalNUpdated, affectedRows);
             
@@ -171,29 +253,41 @@ public class ProductImgUrlSyncJobService {
             int totalNUpdated = 0; // URL不存在更新为N的数量
             int batchNum = 0;
             
+            // 先获取总记录数，确保分页逻辑正确
+            int totalCount = 0;
+            try {
+                String countSql = "SELECT COUNT(*) " +
+                                 "FROM product_imgurl_isok@bj_70 a " +
+                                 "WHERE a.imageurl is not null  and ((a.isok in ('Y') and to_number(to_char(a.creationdate, 'YYYYMMDD')) >= 20240101 )  or a.isok in ( 'A') )  " +
+                                 "AND to_number(to_char(a.modifieddate,'YYYYMMDD'))<to_number(to_char(sysdate,'YYYYMMDD'))";
+                totalCount = jdbcTemplate.queryForObject(countSql, Integer.class);
+                log.info("总记录数: {}", totalCount);
+            } catch (Exception e) {
+                log.error("获取总记录数失败", e);
+            }
+            
             // 分批查询和处理，避免一次性加载大量数据
+            // 使用基于ID的分页方式，避免ROWNUM分页的问题
+            Long lastId = 0L;
             while (true) {
                 batchNum++;
-                long offset = (batchNum - 1) * (long)batchSize;
                 
                 // 分批查询需要检查的图片URL
-                // Oracle 11g兼容的分页查询语法
+                // 使用基于ID的分页，确保不会遗漏数据
+                // Oracle 11g兼容的分页语法
                 String querySql = "SELECT * FROM (" +
                                   "    SELECT a.id, a.imageurl, ROWNUM AS rn " +
                                   "    FROM product_imgurl_isok@bj_70 a " +
-                                  "    WHERE a.imageurl is not null  and  a.isok IN ('Y', 'A') and to_number(to_char(a.creationdate,'YYYYMMDD'))>=20240101  " +
-								  "    AND to_number(to_char(a.modifieddate,'YYYYMMDD'))<to_number(to_char(sysdate,'YYYYMMDD')) AND ROWNUM <= (? + ?) " +
-                                  " ) WHERE rn > ?";
-                                // String querySql = "SELECT * FROM (" +
-                                //   "    SELECT a.id, a.imageurl, ROWNUM AS rn " +
-                                //   "    FROM product_imgurl_isok@bj_70 a " +
-                                //   "    WHERE  a.MODIFIEDDATE<sysdate-2 and  a.imageurl is not null  and  a.isok IN ('Y', 'A') and to_number(to_char(a.creationdate,'YYYYMMDD'))>=20240101  " +
-								//   "    AND to_number(to_char(a.modifieddate,'YYYYMMDD'))<to_number(to_char(sysdate,'YYYYMMDD')) AND ROWNUM <= (? + ?) " +
-                                //   " ) WHERE rn > ?";
+                                  "    WHERE a.imageurl is not null " +
+                                  "    AND  ((a.isok in ('Y') and to_number(to_char(a.creationdate, 'YYYYMMDD')) >= 20240101 )  or a.isok in ( 'A') )  " +
+                                  "    AND to_number(to_char(a.modifieddate,'YYYYMMDD'))<to_number(to_char(sysdate,'YYYYMMDD')) " +
+                                  "    AND a.id > ? " +
+                                  "    ORDER BY a.id " +
+                                  ") WHERE ROWNUM <= ?";
 
-                  log.info("执行查询结果是哪个",querySql);
+                log.info("执行查询，批次：{}, 起始ID：{}, 批次大小：{}", batchNum, lastId, batchSize);
                 
-                List<ImgUrlRecord> records = jdbcTemplate.query(querySql, new Object[]{batchSize, offset, offset}, new RowMapper<ImgUrlRecord>() {
+                List<ImgUrlRecord> records = jdbcTemplate.query(querySql, new Object[]{lastId, batchSize}, new RowMapper<ImgUrlRecord>() {
                     @Override
                     public ImgUrlRecord mapRow(ResultSet rs, int rowNum) throws SQLException {
                         ImgUrlRecord record = new ImgUrlRecord();
@@ -203,10 +297,17 @@ public class ProductImgUrlSyncJobService {
                     }
                 });
                 
+                log.info("查询到记录数: {}", records.size());
+                
                 // 如果没有更多记录，退出循环
                 if (records.isEmpty()) {
+                    log.info("没有更多记录，循环结束。共处理 {} 批次", batchNum - 1);
                     break;
                 }
+                
+                // 更新lastId为当前批次最后一条记录的ID
+                lastId = records.get(records.size() - 1).getId();
+                log.info("本批次最后一条记录ID: {}, 下批次起始ID: {}", lastId, lastId);
                 
                 int batchRecords = records.size();
                 totalRecords += batchRecords;
@@ -217,9 +318,17 @@ public class ProductImgUrlSyncJobService {
                         .filter(record -> record.getImageUrl() != null && !record.getImageUrl().trim().isEmpty())
                         .collect(Collectors.toList());
                 
+                // 记录批次中的关键ID
+                if (!records.isEmpty()) {
+                    long minId = records.stream().mapToLong(ImgUrlRecord::getId).min().orElse(0);
+                    long maxId = records.stream().mapToLong(ImgUrlRecord::getId).max().orElse(0);
+                    log.info("本批次ID范围：{} - {}, 包含648798: {}", minId, maxId, records.stream().anyMatch(r -> r.getId() == 648798));
+                }
+                
                 // 并发检查URL
                 List<Future<ImgUrlCheckResult>> futures = new ArrayList<>();
                 for (ImgUrlRecord record : validRecords) {
+                    log.info("提交URL检查任务 - ID: {}", record.getId());
                     futures.add(executorService.submit(() -> checkUrlAsync(record)));
                 }
                 
@@ -259,6 +368,10 @@ public class ProductImgUrlSyncJobService {
             
             log.info("图片URL检查完成，总检查数量：{}, URL存在更新为N的数量：{}, URL不存在更新为Y的数量：{}", 
                     totalRecords, totalNUpdated, totalYUpdated);
+            log.info("总记录数对比：数据库总记录数={}, 实际处理记录数={}", totalCount, totalRecords);
+            if (totalCount > 0 && totalRecords < totalCount) {
+                log.warn("警告：处理记录数小于数据库总记录数，可能存在数据丢失");
+            }
             
             // 返回统计结果数组
             return new int[]{totalRecords, totalYUpdated, totalNUpdated};
@@ -364,6 +477,102 @@ public class ProductImgUrlSyncJobService {
         } catch (Exception e) {
             log.error("批量更新URL状态（带类型）失败", e);
             return new int[]{0, 0};
+        }
+    }
+    
+    /**
+     * 根据指定日期执行ON_QDRANT_PRODUCT表的插入操作（基于m_dim12_id）
+     * @param dateStr 日期字符串，格式：YYYYMMDD
+     * @return 插入的记录数
+     */
+    public int insertOnQdrantProductByDate(String dateStr) {
+        log.info("开始执行ON_QDRANT_PRODUCT表插入操作（基于m_dim12_id），日期：{}", dateStr);
+        
+        try {
+            String insertSql = "INSERT INTO ON_QDRANT_PRODUCT ( " +
+                              "     id, creationdate, modifieddate,has_train, " +
+                              "     m_product_id, sku_name, img_url, rtype, code " +
+                              " ) " +
+                              " SELECT " +
+                              "     get_sequences('ON_QDRANT_PRODUCT'), " +
+                              "     a.modifieddate, " +
+                              "     a.modifieddate, " +
+                              "     'N', " +
+                              "     b.id, " +
+                              "     d.no, " +
+                              "     a.imageurl,    " +
+                              "     'Y', " +
+                              "     c.attribname   " +
+                              " FROM " +
+                              "     product_imgurl_isok@bj_70 a " +
+                              "     JOIN m_product@bj_70 b ON a.m_product_id = b.id " +
+                              "     JOIN m_dim@bj_70 c ON b.m_dim12_id = c.id " +
+                              "     JOIN m_product_alias@bj_70 d ON b.id = d.m_product_id " +
+                              " WHERE " +
+                              "     b.isactive = 'Y' " +
+                              "     AND b.m_dim12_id IS NOT NULL " +
+                              "     AND a.isok = 'N' " +
+                              "     AND to_number(to_char(a.modifieddate,'YYYYMMDD')) = ? " +
+                              "     AND NOT EXISTS ( " +
+                              "         SELECT 1 " +
+                              "         FROM ON_QDRANT_PRODUCT f " +
+                              "         WHERE f.sku_name = d.no " +
+                              "     )";
+            
+            int insertedRows = jdbcTemplate.update(insertSql, dateStr);
+            log.info("插入ON_QDRANT_PRODUCT表完成（基于m_dim12_id），日期：{}，新增记录数：{}", dateStr, insertedRows);
+            return insertedRows;
+        } catch (Exception e) {
+            log.error("执行ON_QDRANT_PRODUCT表插入操作失败（基于m_dim12_id），日期：{}", dateStr, e);
+            throw e;
+        }
+    }
+    
+    /**
+     * 根据指定日期执行ON_QDRANT_PRODUCT表的插入操作（基于m_dim15_id）
+     * @param dateStr 日期字符串，格式：YYYYMMDD
+     * @return 插入的记录数
+     */
+    public int insertOnQdrantProductByDateDim15(String dateStr) {
+        log.info("开始执行ON_QDRANT_PRODUCT表插入操作（基于m_dim15_id），日期：{}", dateStr);
+        
+        try {
+            String insertSql = "INSERT INTO ON_QDRANT_PRODUCT ( " +
+                              "     id, creationdate, modifieddate,has_train, " +
+                              "     m_product_id, sku_name, img_url, rtype, code " +
+                              " ) " +
+                              " SELECT " +
+                              "     get_sequences('ON_QDRANT_PRODUCT'), " +
+                              "     a.modifieddate, " +
+                              "     a.modifieddate, " +
+                              "     'N', " +
+                              "     b.id, " +
+                              "     d.no, " +
+                              "     a.imageurl,    " +
+                              "     'Y', " +
+                              "     c.attribname   " +
+                              " FROM " +
+                              "     product_imgurl_isok@bj_70 a " +
+                              "     JOIN m_product@bj_70 b ON a.m_product_id = b.id " +
+                              "     JOIN m_dim@bj_70 c ON b.m_dim15_id = c.id " +
+                              "     JOIN m_product_alias@bj_70 d ON b.id = d.m_product_id " +
+                              " WHERE " +
+                              "     b.isactive = 'Y' " +
+                              "     AND b.m_dim15_id IS NOT NULL " +
+                              "     AND a.isok = 'N' " +
+                              "     AND to_number(to_char(a.modifieddate,'YYYYMMDD')) = ? " +
+                              "     AND NOT EXISTS ( " +
+                              "         SELECT 1 " +
+                              "         FROM ON_QDRANT_PRODUCT f " +
+                              "         WHERE f.sku_name = d.no " +
+                              "     )";
+            
+            int insertedRows = jdbcTemplate.update(insertSql, dateStr);
+            log.info("插入ON_QDRANT_PRODUCT表完成（基于m_dim15_id），日期：{}，新增记录数：{}", dateStr, insertedRows);
+            return insertedRows;
+        } catch (Exception e) {
+            log.error("执行ON_QDRANT_PRODUCT表插入操作失败（基于m_dim15_id），日期：{}", dateStr, e);
+            throw e;
         }
     }
     

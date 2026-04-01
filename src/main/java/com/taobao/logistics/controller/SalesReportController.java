@@ -51,7 +51,11 @@ public class SalesReportController {
         List<SystemAccessData> systemAccessList = querySystemAccessData(month);
         log.info("查询到系统访问统计数据 {} 条", systemAccessList.size());
         for (SystemAccessData data : systemAccessList) {
-            log.debug("系统访问统计数据：{} - 访问人数：{}，访问次数：{}", data.getSystemName(), data.getVisitorCount(), data.getUsageCount());
+            log.debug("系统访问统计数据：{} - 纪念日: {}({}), ENJOY: {}({}), 哆象: {}({})", 
+                data.getSystemName(), 
+                data.getJinianriVisitor(), data.getJinianriUsage(),
+                data.getEnjoyVisitor(), data.getEnjoyUsage(),
+                data.getDuoxiangVisitor(), data.getDuoxiangUsage());
         }
         result.put("systemAccess", systemAccessList);
 
@@ -128,11 +132,11 @@ public class SalesReportController {
      */
     @GetMapping("/exportYearSummary")
     public void exportYearSummary(HttpServletResponse response) throws IOException {
-        log.info("导出2025年全年销售数据汇总到Excel");
+        log.info("导出2026年全年销售数据汇总到Excel");
 
         // 创建工作簿
         Workbook workbook = new HSSFWorkbook();
-        Sheet sheet = workbook.createSheet("2025年销售数据汇总");
+        Sheet sheet = workbook.createSheet("2026年销售数据汇总");
 
         // 设置列宽
         sheet.setColumnWidth(0, 256 * 20);
@@ -146,29 +150,33 @@ public class SalesReportController {
         // 创建标题行
         Row titleRow = sheet.createRow(0);
         Cell titleCell = titleRow.createCell(0);
-        titleCell.setCellValue("2025年销售数据汇总");
+        titleCell.setCellValue("2026年销售数据汇总");
         titleCell.setCellStyle(createTitleCellStyle(workbook));
         sheet.addMergedRegion(new CellRangeAddress(0, 0, 0, 6));
 
-        // 查询2025年1月到12月的数据
+        // 查询2026年1月到12月的数据
         // 初始化年度汇总数据
         Map<String, SystemAccessData> systemAccessMap = new HashMap<>();
         Map<String, SalesPlatformData> salesPlatformMap = new HashMap<>();
         
-        // 遍历2025年1月到12月
+        // 遍历2026年1月到12月
         for (int i = 1; i <= 12; i++) {
-            String month = String.format("2025%02d", i);
+            String month = String.format("2026%02d", i);
             
             // 查询月度系统访问数据
             List<SystemAccessData> monthlySystemAccess = querySystemAccessData(month);
             for (SystemAccessData data : monthlySystemAccess) {
                 systemAccessMap.merge(data.getSystemName(), data, (existing, incoming) -> {
-                    // 创建新对象来合并数据，因为没有setter方法
-                    return new SystemAccessData(
-                        existing.getSystemName(),
-                        existing.getVisitorCount() + incoming.getVisitorCount(),
-                        existing.getUsageCount() + incoming.getUsageCount()
-                    );
+                    // 创建新对象来合并数据
+                    SystemAccessData merged = new SystemAccessData();
+                    merged.setSystemName(existing.getSystemName());
+                    merged.setJinianriVisitor(existing.getJinianriVisitor() + incoming.getJinianriVisitor());
+                    merged.setJinianriUsage(existing.getJinianriUsage() + incoming.getJinianriUsage());
+                    merged.setEnjoyVisitor(existing.getEnjoyVisitor() + incoming.getEnjoyVisitor());
+                    merged.setEnjoyUsage(existing.getEnjoyUsage() + incoming.getEnjoyUsage());
+                    merged.setDuoxiangVisitor(existing.getDuoxiangVisitor() + incoming.getDuoxiangVisitor());
+                    merged.setDuoxiangUsage(existing.getDuoxiangUsage() + incoming.getDuoxiangUsage());
+                    return merged;
                 });
             }
             
@@ -197,7 +205,7 @@ public class SalesReportController {
         writeSalesPlatformData(sheet, workbook, yearlySalesPlatformList);
 
         // 设置响应头
-        String fileName = "2025年销售数据汇总.xls";
+        String fileName = "2026年销售数据汇总.xls";
         response.setContentType("application/vnd.ms-excel");
         response.setHeader("Content-Disposition", "attachment; filename=" + new String(fileName.getBytes(), "ISO-8859-1"));
 
@@ -217,74 +225,237 @@ public class SalesReportController {
     private List<SystemAccessData> querySystemAccessData(String month) {
         log.info("开始执行querySystemAccessData方法，月份：{}", month);
         List<SystemAccessData> list = new ArrayList<>();
+        List<Map<String, Object>> bjcUsageResult = new ArrayList<>();
+        List<Map<String, Object>> bjcVisitorResult = new ArrayList<>();
         
         // 系统名称对应关系
         Map<String, String> nameMapping = new HashMap<>();
         nameMapping.put("数据分析", "智慧门店");
         nameMapping.put("EN门店销售排名", "ENJOY智慧门店");
         nameMapping.put("盘点系统", "盘点机");
-        nameMapping.put("微信客诉", "客人诉");
+        nameMapping.put("微信客诉", "客诉");
         nameMapping.put("配件补单", "配件补单");
+        nameMapping.put("伯俊系统", "伯俊系统");
+        nameMapping.put("商城/随手购", "商城/随手购");
         log.debug("系统名称对应关系：{}", nameMapping);
         
+        // 品牌名称对应关系
+        Map<String, String> brandMapping = new HashMap<>();
+        brandMapping.put("DBCSTORE", "哆象");
+        log.debug("品牌名称对应关系：{}", brandMapping);
+        
         try {
-            // 查询访问次数
-            String usageSql = "SELECT count(id) as usage_count, a.name " +
-                             "FROM crm_fw_log@bj_70 a " +
+            // 声明变量
+            List<Map<String, Object>> mallVisitorResult = new ArrayList<>();
+            List<Map<String, Object>> mallUsageResult = new ArrayList<>();
+            // 查询伯俊系统的访问次数
+            String bjcUsageSql = "SELECT '伯俊系统' as name, count(a.id) as usage_count, d.attribname as brand " +
+                    "FROM C_SYSLOG@bj_70 a, users@bj_70 b, c_store@bj_70 c, m_dim@bj_70 d " +
+                    "WHERE a.operator = b.truename " +
+                    "and c.id = b.c_store_id " +
+                    "and c.m_dim1_id = d.id " +
+                    "and b.isactive = 'Y' " +
+                    "and a.submodule = 'login' " +
+                    "and to_char(a.creationdate, 'YYYYMM') = ? " +
+                    "group by d.attribname";
+            log.debug("执行伯俊系统访问次数查询SQL：{}，参数：{}", bjcUsageSql, month);
+            bjcUsageResult = jdbcTemplate.queryForList(bjcUsageSql, month);
+            log.debug("伯俊系统访问次数查询结果：{}", bjcUsageResult);
+
+            // 查询伯俊系统的访问人数
+            String bjcVisitorSql = "SELECT '伯俊系统' as name, d.attribname as brand, count(DISTINCT a.operator) as visitor_count " +
+                    "FROM C_SYSLOG@bj_70 a, users@bj_70 b, c_store@bj_70 c, m_dim@bj_70 d " +
+                    "WHERE a.operator = b.truename " +
+                    "and c.id = b.c_store_id " +
+                    "and c.m_dim1_id = d.id " +
+                    "and b.isactive = 'Y' " +
+                    "and a.submodule = 'login' " +
+                    "and to_char(a.creationdate, 'YYYYMM') = ? " +
+                    "group by d.attribname";
+            log.debug("执行伯俊系统访问人数查询SQL：{}，参数：{}", bjcVisitorSql, month);
+            bjcVisitorResult = jdbcTemplate.queryForList(bjcVisitorSql, month);
+            log.debug("伯俊系统访问人数查询结果：{}", bjcVisitorResult);
+
+            // 查询商城/随手购的访问人数
+            String mallVisitorSql = "SELECT '商城/随手购' as name, '纪念日' as brand, count(DISTINCT a.user_name) as visitor_count " +
+                                 "FROM ADMIN_USER_LOG@sc_113 a " +
+                                 "WHERE to_char(a.creationdate, 'YYYYMM') = ?";
+            log.debug("执行商城/随手购访问人数查询SQL：{}，参数：{}", mallVisitorSql, month);
+            mallVisitorResult = jdbcTemplate.queryForList(mallVisitorSql, month);
+            log.debug("商城/随手购访问人数查询结果：{}", mallVisitorResult);
+
+            // 查询商城/随手购的访问次数
+            String mallUsageSql = "SELECT '商城/随手购' as name, '纪念日' as brand, count(a.id) as usage_count " +
+                               "FROM ADMIN_USER_LOG@sc_113 a " +
+                               "WHERE to_char(a.creationdate, 'YYYYMM') = ?";
+            log.debug("执行商城/随手购访问次数查询SQL：{}，参数：{}", mallUsageSql, month);
+            mallUsageResult = jdbcTemplate.queryForList(mallUsageSql, month);
+            log.debug("商城/随手购访问次数查询结果：{}", mallUsageResult);
+
+            // 查询访问次数（按系统和品牌分组）
+            String usageSql = "SELECT count(a.id) as usage_count, a.name,c.attribname as brand " +
+                             "FROM crm_fw_log@bj_70 a ,c_store@bj_70 b ,m_dim@bj_70 c ,hr_employee@bj_70 d " +
                              "WHERE to_char(a.creationdate, 'YYYYMM') = ? " +
+                             "and d.no=a.code " +
+                             "and b.m_dim1_id =c.id " +
+                             "and d.c_store_id=b.id " +
                              "AND a.name IN ('盘点系统', '微信客诉', 'EN门店销售排名', '配件补单', '数据分析') " +
-                             "GROUP BY a.name";
+                             "group by a.name,c.attribname";
             log.debug("执行访问次数查询SQL：{}，参数：{}", usageSql, month);
             List<Map<String, Object>> usageResult = jdbcTemplate.queryForList(usageSql, month);
             log.debug("访问次数查询结果：{}", usageResult);
             
-            // 将访问次数结果存储到Map中，方便后续合并
-            Map<String, Integer> usageMap = new HashMap<>();
-            for (Map<String, Object> row : usageResult) {
-                String name = (String) row.get("name");
-                int usageCount = ((Number) row.get("usage_count")).intValue();
-                usageMap.put(name, usageCount);
-                log.debug("访问次数 - {}：{}", name, usageCount);
-            }
-            log.debug("访问次数Map：{}", usageMap);
-            
-            // 查询访问人数
-            String visitorSql = "SELECT name, count(code) as visitor_count " +
-                               "FROM ( " +
-                               "    SELECT a.name, a.code FROM crm_fw_log@bj_70 a " +
-                               "    WHERE to_char(a.creationdate, 'YYYYMM') = ? " +
-                               "    AND a.name IN ('盘点系统', '微信客诉', 'EN门店销售排名', '配件补单', '数据分析') " +
-                               "    GROUP BY a.name, a.code " +
-                               ") " +
-                               "GROUP BY name";
+            // 查询访问人数（按系统和品牌分组）
+            String visitorSql = "SELECT a.name, c.attribname as brand, count(DISTINCT a.code) as visitor_count " +
+                               "FROM crm_fw_log@bj_70 a ,c_store@bj_70 b ,m_dim@bj_70 c ,hr_employee@bj_70 d " +
+                               "WHERE to_char(a.creationdate, 'YYYYMM') = ? " +
+                               "and d.no=a.code " +
+                               "and b.m_dim1_id =c.id " +
+                               "and d.c_store_id=b.id " +
+                               "AND a.name IN ('盘点系统', '微信客诉', 'EN门店销售排名', '配件补单', '数据分析') " +
+                               "GROUP BY a.name, c.attribname";
             log.debug("执行访问人数查询SQL：{}，参数：{}", visitorSql, month);
             List<Map<String, Object>> visitorResult = jdbcTemplate.queryForList(visitorSql, month);
             log.debug("访问人数查询结果：{}", visitorResult);
             
-            // 将访问人数结果存储到Map中，方便后续合并
-            Map<String, Integer> visitorMap = new HashMap<>();
-            for (Map<String, Object> row : visitorResult) {
-                String name = (String) row.get("name");
-                int visitorCount = ((Number) row.get("visitor_count")).intValue();
-                visitorMap.put(name, visitorCount);
-                log.debug("访问人数 - {}：{}", name, visitorCount);
-            }
-            log.debug("访问人数Map：{}", visitorMap);
-            
-            // 合并两个查询的结果
+            // 准备所有系统名称
             Set<String> allNames = new HashSet<>();
-            allNames.addAll(usageMap.keySet());
-            allNames.addAll(visitorMap.keySet());
+            for (Map<String, Object> row : usageResult) {
+                allNames.add((String) row.get("name"));
+            }
+            for (Map<String, Object> row : visitorResult) {
+                allNames.add((String) row.get("name"));
+            }
+            // 确保所有系统都包含在内
+            allNames.addAll(nameMapping.keySet());
+            // 添加商城/随手购到系统名称集合
+            allNames.add("商城/随手购");
             log.debug("所有系统名称：{}", allNames);
             
+            // 构建结果数据
             for (String originalName : allNames) {
                 String displayName = nameMapping.getOrDefault(originalName, originalName);
-                int usageCount = usageMap.getOrDefault(originalName, 0);
-                int visitorCount = visitorMap.getOrDefault(originalName, 0);
                 
-                SystemAccessData data = new SystemAccessData(displayName, visitorCount, usageCount);
+                // 创建一个包含所有品牌数据的对象
+                SystemAccessData data = new SystemAccessData();
+                data.setSystemName(displayName);
+                
+                // 初始化所有品牌的访问人数和访问次数为0
+                data.setJinianriVisitor(0);
+                data.setJinianriUsage(0);
+                data.setEnjoyVisitor(0);
+                data.setEnjoyUsage(0);
+                data.setDuoxiangVisitor(0);
+                data.setDuoxiangUsage(0);
+                
+                // 填充访问次数数据
+                for (Map<String, Object> row : usageResult) {
+                    if (originalName.equals(row.get("name"))) {
+                        String brandName = (String) row.get("brand");
+                        String mappedBrand = brandMapping.getOrDefault(brandName, brandName);
+                        int usageCount = ((Number) row.get("usage_count")).intValue();
+                        
+                        if ("纪念日".equals(mappedBrand)) {
+                            data.setJinianriUsage(usageCount);
+                        } else if ("ENJOY".equals(mappedBrand)) {
+                            data.setEnjoyUsage(usageCount);
+                        } else if ("哆象".equals(mappedBrand)) {
+                            data.setDuoxiangUsage(usageCount);
+                        }
+                    }
+                }
+                
+                // 填充伯俊系统访问次数数据
+                if ("伯俊系统".equals(originalName)) {
+                    for (Map<String, Object> row : bjcUsageResult) {
+                        String brandName = (String) row.get("brand");
+                        String mappedBrand = brandMapping.getOrDefault(brandName, brandName);
+                        int usageCount = ((Number) row.get("usage_count")).intValue();
+                        
+                        if ("纪念日".equals(mappedBrand)) {
+                            data.setJinianriUsage(usageCount);
+                        } else if ("ENJOY".equals(mappedBrand)) {
+                            data.setEnjoyUsage(usageCount);
+                        } else if ("哆象".equals(mappedBrand)) {
+                            data.setDuoxiangUsage(usageCount);
+                        }
+                    }
+                }
+                
+                // 填充商城/随手购访问次数数据
+                if ("商城/随手购".equals(originalName)) {
+                    for (Map<String, Object> row : mallUsageResult) {
+                        String brandName = (String) row.get("brand");
+                        String mappedBrand = brandMapping.getOrDefault(brandName, brandName);
+                        int usageCount = ((Number) row.get("usage_count")).intValue();
+                        
+                        if ("纪念日".equals(mappedBrand)) {
+                            data.setJinianriUsage(usageCount);
+                        } else if ("ENJOY".equals(mappedBrand)) {
+                            data.setEnjoyUsage(usageCount);
+                        } else if ("哆象".equals(mappedBrand)) {
+                            data.setDuoxiangUsage(usageCount);
+                        }
+                    }
+                }
+                
+                // 填充访问人数数据
+                for (Map<String, Object> row : visitorResult) {
+                    if (originalName.equals(row.get("name"))) {
+                        String brandName = (String) row.get("brand");
+                        String mappedBrand = brandMapping.getOrDefault(brandName, brandName);
+                        int visitorCount = ((Number) row.get("visitor_count")).intValue();
+                        
+                        if ("纪念日".equals(mappedBrand)) {
+                            data.setJinianriVisitor(visitorCount);
+                        } else if ("ENJOY".equals(mappedBrand)) {
+                            data.setEnjoyVisitor(visitorCount);
+                        } else if ("哆象".equals(mappedBrand)) {
+                            data.setDuoxiangVisitor(visitorCount);
+                        }
+                    }
+                }
+                
+                // 填充伯俊系统访问人数数据
+                if ("伯俊系统".equals(originalName)) {
+                    for (Map<String, Object> row : bjcVisitorResult) {
+                        String brandName = (String) row.get("brand");
+                        String mappedBrand = brandMapping.getOrDefault(brandName, brandName);
+                        int visitorCount = ((Number) row.get("visitor_count")).intValue();
+                        
+                        if ("纪念日".equals(mappedBrand)) {
+                            data.setJinianriVisitor(visitorCount);
+                        } else if ("ENJOY".equals(mappedBrand)) {
+                            data.setEnjoyVisitor(visitorCount);
+                        } else if ("哆象".equals(mappedBrand)) {
+                            data.setDuoxiangVisitor(visitorCount);
+                        }
+                    }
+                }
+                
+                // 填充商城/随手购访问人数数据
+                if ("商城/随手购".equals(originalName)) {
+                    for (Map<String, Object> row : mallVisitorResult) {
+                        String brandName = (String) row.get("brand");
+                        String mappedBrand = brandMapping.getOrDefault(brandName, brandName);
+                        int visitorCount = ((Number) row.get("visitor_count")).intValue();
+                        
+                        if ("纪念日".equals(mappedBrand)) {
+                            data.setJinianriVisitor(visitorCount);
+                        } else if ("ENJOY".equals(mappedBrand)) {
+                            data.setEnjoyVisitor(visitorCount);
+                        } else if ("哆象".equals(mappedBrand)) {
+                            data.setDuoxiangVisitor(visitorCount);
+                        }
+                    }
+                }
+                
                 list.add(data);
-                log.debug("合并后的数据：{} - 访问人数：{}，访问次数：{}", displayName, visitorCount, usageCount);
+                log.debug("合并后的数据：{} - 纪念日: {}({}), ENJOY: {}({}), 哆象: {}({})", 
+                    displayName, 
+                    data.getJinianriVisitor(), data.getJinianriUsage(),
+                    data.getEnjoyVisitor(), data.getEnjoyUsage(),
+                    data.getDuoxiangVisitor(), data.getDuoxiangUsage());
             }
             
             // 添加集团CRM数据
@@ -322,7 +493,7 @@ public class SalesReportController {
             list.add(new SystemAccessData("智慧门店", 1408, 18047));
             list.add(new SystemAccessData("ENJOY智慧门店", 1610, 42));
             list.add(new SystemAccessData("盘点机", 70, 471));
-            list.add(new SystemAccessData("客人诉", 156, 372));
+            list.add(new SystemAccessData("客诉", 156, 372));
             list.add(new SystemAccessData("配件补单", 108, 231));
         }
         
@@ -518,7 +689,7 @@ public class SalesReportController {
             
             // 查询CRM_VIP_V_CARDLOG消费数据（平台订单量）
             try {
-                String consumeSql = "SELECT b.description, sum(a.AMOUNT) as amount " +
+                String consumeSql = "SELECT b.description, count(a.id) as amount " +
                                 "FROM CRM_VIP_V_CARDLOG@bj_70 a, AD_LIMITVALUE@bj_70 b " +
                                 "WHERE to_char(a.creationdate, 'YYYYMM') = ? " +
                                 "AND a.M_NAME = b.value " +
@@ -633,8 +804,12 @@ public class SalesReportController {
         int rowIndex = 2;
         Row systemTitleRow = sheet.createRow(rowIndex++);
         systemTitleRow.createCell(0).setCellValue("系统名称");
-        systemTitleRow.createCell(1).setCellValue("访问人数");
-        systemTitleRow.createCell(2).setCellValue("使用/访问次数");
+        systemTitleRow.createCell(1).setCellValue("纪念日访问人数");
+        systemTitleRow.createCell(2).setCellValue("纪念日访问次数");
+        systemTitleRow.createCell(3).setCellValue("ENJOY访问人数");
+        systemTitleRow.createCell(4).setCellValue("ENJOY访问次数");
+        systemTitleRow.createCell(5).setCellValue("哆象访问人数");
+        systemTitleRow.createCell(6).setCellValue("哆象访问次数");
 
         // 设置标题样式
         setRowCellStyle(systemTitleRow, createHeaderCellStyle(workbook));
@@ -643,8 +818,12 @@ public class SalesReportController {
         for (SystemAccessData data : dataList) {
             Row dataRow = sheet.createRow(rowIndex++);
             dataRow.createCell(0).setCellValue(data.getSystemName());
-            dataRow.createCell(1).setCellValue(data.getVisitorCount());
-            dataRow.createCell(2).setCellValue(data.getUsageCount());
+            dataRow.createCell(1).setCellValue(data.getJinianriVisitor());
+            dataRow.createCell(2).setCellValue(data.getJinianriUsage());
+            dataRow.createCell(3).setCellValue(data.getEnjoyVisitor());
+            dataRow.createCell(4).setCellValue(data.getEnjoyUsage());
+            dataRow.createCell(5).setCellValue(data.getDuoxiangVisitor());
+            dataRow.createCell(6).setCellValue(data.getDuoxiangUsage());
             setRowCellStyle(dataRow, createDataCellStyle(workbook));
         }
     }
@@ -755,25 +934,80 @@ public class SalesReportController {
      */
     private static class SystemAccessData {
         private String systemName;
-        private int visitorCount;
-        private int usageCount;
+        private int jinianriVisitor;
+        private int jinianriUsage;
+        private int enjoyVisitor;
+        private int enjoyUsage;
+        private int duoxiangVisitor;
+        private int duoxiangUsage;
+
+        public SystemAccessData() {
+        }
 
         public SystemAccessData(String systemName, int visitorCount, int usageCount) {
             this.systemName = systemName;
-            this.visitorCount = visitorCount;
-            this.usageCount = usageCount;
+            this.jinianriVisitor = visitorCount;
+            this.jinianriUsage = usageCount;
+            this.enjoyVisitor = visitorCount;
+            this.enjoyUsage = usageCount;
+            this.duoxiangVisitor = visitorCount;
+            this.duoxiangUsage = usageCount;
         }
 
         public String getSystemName() {
             return systemName;
         }
 
-        public int getVisitorCount() {
-            return visitorCount;
+        public void setSystemName(String systemName) {
+            this.systemName = systemName;
         }
 
-        public int getUsageCount() {
-            return usageCount;
+        public int getJinianriVisitor() {
+            return jinianriVisitor;
+        }
+
+        public void setJinianriVisitor(int jinianriVisitor) {
+            this.jinianriVisitor = jinianriVisitor;
+        }
+
+        public int getJinianriUsage() {
+            return jinianriUsage;
+        }
+
+        public void setJinianriUsage(int jinianriUsage) {
+            this.jinianriUsage = jinianriUsage;
+        }
+
+        public int getEnjoyVisitor() {
+            return enjoyVisitor;
+        }
+
+        public void setEnjoyVisitor(int enjoyVisitor) {
+            this.enjoyVisitor = enjoyVisitor;
+        }
+
+        public int getEnjoyUsage() {
+            return enjoyUsage;
+        }
+
+        public void setEnjoyUsage(int enjoyUsage) {
+            this.enjoyUsage = enjoyUsage;
+        }
+
+        public int getDuoxiangVisitor() {
+            return duoxiangVisitor;
+        }
+
+        public void setDuoxiangVisitor(int duoxiangVisitor) {
+            this.duoxiangVisitor = duoxiangVisitor;
+        }
+
+        public int getDuoxiangUsage() {
+            return duoxiangUsage;
+        }
+
+        public void setDuoxiangUsage(int duoxiangUsage) {
+            this.duoxiangUsage = duoxiangUsage;
         }
     }
 

@@ -54,7 +54,6 @@
             margin-bottom: 20px;
         }
         .layui-table th {
-            background-color: #f8f8f8;
             font-weight: bold;
         }
         .highlight-row {
@@ -68,7 +67,44 @@
             background-color: #4cae4c;
             color: white;
         }
-    </style>
+        /* 品牌列样式 */
+        .brand-jinianri th {
+            background-color: #e3f2fd !important;
+            color: #1976d2 !important;
+            border-right: 2px solid #1976d2 !important;
+        }
+        .brand-jinianri td {
+            background-color: #f3e5f5 !important;
+            border-right: 1px solid #ce93d8 !important;
+        }
+        .brand-enjoy th {
+            background-color: #e8f5e8 !important;
+            color: #2e7d32 !important;
+            border-right: 2px solid #2e7d32 !important;
+        }
+        .brand-enjoy td {
+            background-color: #e8f5e8 !important;
+            border-right: 1px solid #a5d6a7 !important;
+        }
+        .brand-duoxiang th {
+            background-color: #fff3e0 !important;
+            color: #ef6c00 !important;
+            border-right: 2px solid #ef6c00 !important;
+        }
+        .brand-duoxiang td {
+            background-color: #fff3e0 !important;
+            border-right: 1px solid #ffcc80 !important;
+        }
+        /* 系统名称列样式 */
+        .system-name th {
+            background-color: #f5f5f5 !important;
+            font-weight: bold !important;
+        }
+        .system-name td {
+            background-color: #fafafa !important;
+            font-weight: 500 !important;
+        }
+        </style>
 </head>
 <body>
     <div class="container">
@@ -134,9 +170,17 @@
                 elem: '#systemTable',
                 id: 'systemTable', // 添加id属性
                 cols: [[
-                    {field: 'systemName', title: '系统名称', width: 150, align: 'center'},
-                    {field: 'visitorCount', title: '访问人数', width: 120, align: 'center'},
-                    {field: 'usageCount', title: '使用/访问次数', width: 150, align: 'center'}
+                    {field: 'systemName', title: '系统名称', width: 150, align: 'center', rowspan: 2},
+                    {title: '纪念日', align: 'center', colspan: 2},
+                    {title: 'ENJOY', align: 'center', colspan: 2},
+                    {title: '哆象', align: 'center', colspan: 2}
+                ], [
+                    {field: 'jinianriVisitor', title: '访问人数', width: 120, align: 'center'},
+                    {field: 'jinianriUsage', title: '使用/访问次数', width: 150, align: 'center'},
+                    {field: 'enjoyVisitor', title: '访问人数', width: 120, align: 'center'},
+                    {field: 'enjoyUsage', title: '使用/访问次数', width: 150, align: 'center'},
+                    {field: 'duoxiangVisitor', title: '访问人数', width: 120, align: 'center'},
+                    {field: 'duoxiangUsage', title: '使用/访问次数', width: 150, align: 'center'}
                 ]],
                 data: [],
                 page: false,

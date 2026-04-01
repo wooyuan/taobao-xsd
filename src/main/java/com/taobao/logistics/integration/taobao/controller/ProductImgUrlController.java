@@ -126,4 +126,60 @@ public class ProductImgUrlController {
         
         return result;
     }
+    
+    /**
+     * 根据指定日期执行ON_QDRANT_PRODUCT表的插入操作（基于m_dim12_id）
+     * 访问地址: http://服务器地址:端口/api/product-img/insert-onqdrant?date=20260303
+     * 
+     * @param date 日期字符串，格式：YYYYMMDD
+     * @return 执行结果
+     */
+    @GetMapping("/insert-onqdrant")
+    public String insertOnQdrantProduct(@RequestParam String date) {
+        log.info("收到执行ON_QDRANT_PRODUCT表插入操作请求（基于m_dim12_id），日期：{}", date);
+        
+        try {
+            // 调用插入方法
+            int insertedRows = productImgUrlSyncJobService.insertOnQdrantProductByDate(date);
+            log.info("执行ON_QDRANT_PRODUCT表插入操作完成（基于m_dim12_id）");
+            
+            // 构建返回结果
+            return String.format("插入操作执行完成！\n" +
+                                "日期：%s\n" +
+                                "新增记录数：%d\n" +
+                                "基于：m_dim12_id",
+                                date, insertedRows);
+        } catch (Exception e) {
+            log.error("执行ON_QDRANT_PRODUCT表插入操作失败（基于m_dim12_id），日期：{}", date, e);
+            return "执行失败: " + e.getMessage();
+        }
+    }
+    
+    /**
+     * 根据指定日期执行ON_QDRANT_PRODUCT表的插入操作（基于m_dim15_id）
+     * 访问地址: http://服务器地址:端口/api/product-img/insert-onqdrant-dim15?date=20260303
+     * 
+     * @param date 日期字符串，格式：YYYYMMDD
+     * @return 执行结果
+     */
+    @GetMapping("/insert-onqdrant-dim15")
+    public String insertOnQdrantProductDim15(@RequestParam String date) {
+        log.info("收到执行ON_QDRANT_PRODUCT表插入操作请求（基于m_dim15_id），日期：{}", date);
+        
+        try {
+            // 调用插入方法
+            int insertedRows = productImgUrlSyncJobService.insertOnQdrantProductByDateDim15(date);
+            log.info("执行ON_QDRANT_PRODUCT表插入操作完成（基于m_dim15_id）");
+            
+            // 构建返回结果
+            return String.format("插入操作执行完成！\n" +
+                                "日期：%s\n" +
+                                "新增记录数：%d\n" +
+                                "基于：m_dim15_id",
+                                date, insertedRows);
+        } catch (Exception e) {
+            log.error("执行ON_QDRANT_PRODUCT表插入操作失败（基于m_dim15_id），日期：{}", date, e);
+            return "执行失败: " + e.getMessage();
+        }
+    }
 }

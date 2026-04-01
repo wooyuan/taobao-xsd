@@ -99,6 +99,68 @@ public class OrderAllocationService {
             return generateErrorHtml("系统异常: " + e.getMessage(), orderId);
         }
     }
+
+    /**
+     * 智能订单分配 - 商城出库单根据库存情况智能分配订单到门店
+     * 按照拆单次数从少到多排序显示结果
+     * @param orderId 订单ID
+     * @return 生成HTML格式的分配结果
+     */
+    public String OssmartOrderAllocation(Long orderId) {
+        try {
+            // 获取订单明细
+            JSONArray orderDetails = tbqtyServices.getOsOrderDetails(orderId);
+            // 获取满足条件的门店库存
+            JSONArray storeInventory = tbqtyServices.getOsStoreInventoryDetails(orderId);
+
+            if (orderDetails.isEmpty()) {
+                return generateErrorHtml("未找到订单明细数据", orderId);
+            }
+
+            if (storeInventory.isEmpty()) {
+                return generateErrorHtml("没有门店有足够的库存满足订单需求", orderId);
+            }
+
+            // 构建数据结构便于分析
+            Map<Long, JSONObject> orderItemMap = new HashMap<>();
+            for (int i = 0; i < orderDetails.size(); i++) {
+                JSONObject item = orderDetails.getJSONObject(i);
+                orderItemMap.put(item.getLong("id"), item);
+            }
+
+            // 按门店分组库存数据
+            Map<Long, Map<String, Object>> storeMap = new HashMap<>();
+            Map<Long, Set<Long>> storeItemMap = new HashMap<>();
+
+            for (int i = 0; i < storeInventory.size(); i++) {
+                JSONObject inventory = storeInventory.getJSONObject(i);
+                Long storeId = inventory.getLong("c_store_id");
+                Long orderItemId = inventory.getLong("order_item_id");
+
+                if (!storeMap.containsKey(storeId)) {
+                    Map<String, Object> storeInfo = new HashMap<>();
+                    storeInfo.put("store_name", inventory.getString("store_name"));
+                    storeInfo.put("items", new ArrayList<JSONObject>());
+                    storeMap.put(storeId, storeInfo);
+                    storeItemMap.put(storeId, new HashSet<>());
+                }
+
+                List<JSONObject> items = safeCastToListJSONObject(storeMap.get(storeId).get("items"));
+                items.add(inventory);
+                storeItemMap.get(storeId).add(orderItemId);
+            }
+
+            // 执行全面分配分析 - 获取所有可能的分配方案
+            AllocationResult result = performComprehensiveAllocation(orderItemMap, storeMap, storeItemMap);
+
+            // 生成HTML结果 - 按拆单次数排序显示
+            return generateOptimizedAllocationHtml(result, orderId, orderDetails.size());
+
+        } catch (Exception e) {
+            log.error("订单分配时发生异常，订单ID: {}", orderId, e);
+            return generateErrorHtml("系统异常: " + e.getMessage(), orderId);
+        }
+    }
     
     /**
      * 执行全面分配分析 - 获取所有可能的分配方案（优化版：排除单门店全量满足的门店）
@@ -166,8 +228,17 @@ public class OrderAllocationService {
                         TwoStoreAllocation existingAllocation = mergedAllocations.get(store1);
                         existingAllocation.store2Ids.add(store2);
                         existingAllocation.store2Names.add((String) storeMap.get(store2).get("store_name"));
+                        
+                        // 计算新添加的门店2的库存
+                        int store2Stock = 0;
+                        List<JSONObject> store2Items = filterItemsForStore(storeMap.get(store2), store2);
+                        for (JSONObject item : store2Items) {
+                            Integer qty = item.getInteger("store_qty") != null ? item.getInteger("store_qty") : 0;
+                            store2Stock += qty;
+                        }
+                        existingAllocation.store2Stocks.add(store2Stock);
+
                         // 合并门店2的商品明细到现有列表中
-                        // List<JSONObject> store2Items = filterItemsForStore(storeMap.get(store2), store2);
                         // existingAllocation.store2Items.addAll(store2Items);
                     } else {
                         // 如果不存在，则创建新的分配方案
@@ -177,10 +248,38 @@ public class OrderAllocationService {
                         allocation.store1Items = filterItemsForStore(storeMap.get(store1), store1);
                         allocation.store2Ids = new ArrayList<>();
                         allocation.store2Names = new ArrayList<>();
+                        allocation.store2Stocks = new ArrayList<>();
+
+                        // 添加门店2并计算其库存
                         allocation.store2Ids.add(store2);
                         allocation.store2Names.add((String) storeMap.get(store2).get("store_name"));
-                        allocation.store2Items = filterItemsForStore(storeMap.get(store2), store2);
+
+                        // 计算门店2的库存
+                        int store2Stock = 0;
+                        List<JSONObject> store2Items = filterItemsForStore(storeMap.get(store2), store2);
+                        for (JSONObject item : store2Items) {
+                            Integer qty = item.getInteger("store_qty") != null ? item.getInteger("store_qty") : 0;
+                            store2Stock += qty;
+                        }
+                        allocation.store2Stocks.add(store2Stock);
+
+                        allocation.store2Items = store2Items;
                         allocation.splitCount = 2; // 拆儅2次
+                        
+                        // 计算门店1库存合计
+                        int store1Stock = 0;
+                        for (JSONObject item : allocation.store1Items) {
+                            Integer qty = item.getInteger("store_qty") != null ? item.getInteger("store_qty") : 0;
+                            store1Stock += qty;
+                        }
+                        allocation.store1TotalStock = store1Stock;
+                        
+                        // 计算门店2库存合计（取第一个门店2的库存，因为后续会添加更多门店2）
+                        allocation.store2TotalStock = store2Stock;
+                        
+                        // 计算门店1+门店2库存合计
+                        allocation.totalStock = store1Stock + store2Stock;
+                        
                         mergedAllocations.put(store1, allocation);
                     }
                 }
@@ -188,6 +287,11 @@ public class OrderAllocationService {
               // 将合并后的分配方案添加到结果中
         result.twoStoreAllocations.clear(); // 清空原有的结果
         result.twoStoreAllocations.addAll(mergedAllocations.values());
+        
+        // 按照门店1+门店2库存合计从大到小排序
+        result.twoStoreAllocations.sort((a1, a2) -> {
+            return Integer.compare(a2.totalStock, a1.totalStock);
+        });
         
         
         // log.info("策略2：排除 {} 个全量满足门店后，剩余 {} 个门店参与两门店组合计算", 
@@ -341,13 +445,98 @@ public class OrderAllocationService {
         //     html.append("</div></div>");
         // }
         
-        // 策略2: 两门店组合满足 (拆儅2次)
+        // 策略2.1: 最佳推荐（从所有两门店组合中选择库存合计最大的）
+        if (!result.twoStoreAllocations.isEmpty()) {
+            hasResults = true;
+            // 从所有两门店组合中选择库存合计最大的方案
+            TwoStoreAllocation bestAllocation = null;
+            int maxTotalStock = 0;
+            for (TwoStoreAllocation allocation : result.twoStoreAllocations) {
+                if (allocation.totalStock > maxTotalStock) {
+                    maxTotalStock = allocation.totalStock;
+                    bestAllocation = allocation;
+                }
+            }
+            html.append("<div class='strategy strategy-1'>")
+                .append("<h3>🏆 最佳推荐：两门店组合满足（库存合计最大） <span class='split-badge'>拆单2次</span></h3>")
+                .append("<div class='summary'>从所有满足条件的门店组合中，")
+                .append("选择门店1+门店2库存合计最大的方案作为最佳推荐")
+                .append("</div>")
+                .append("<div class='solutions-grid'>");
+            
+            // 显示最佳推荐方案
+            html.append("<div class='solution-card' style='padding:12px;'>")
+                .append("<div class='solution-title' style='margin-bottom:8px;'>最佳方案</div>")
+                .append("<div style='display:flex;flex-wrap:wrap;gap:10px;margin-bottom:10px;'>")
+                .append("<div class='solution-store' style='flex:1;min-width:200px;'>门店1: " + bestAllocation.store1Name)
+                .append(" (ID: " + bestAllocation.store1Id + ")")
+                .append("<br>库存: " + bestAllocation.store1TotalStock + "</div>");
+            
+            // 对于最佳方案，选择库存最大的门店2
+            if (bestAllocation.store2Names != null && !bestAllocation.store2Names.isEmpty()) {
+                // 计算每个门店2的库存，选择库存最大的那个
+                String bestStore2Name = null;
+                Long bestStore2Id = null;
+                int maxStore2Stock = 0;
+                
+                // 遍历所有可能的门店2，找出库存最大的那个
+                for (int j = 0; j < bestAllocation.store2Ids.size(); j++) {
+                    Long store2Id = bestAllocation.store2Ids.get(j);
+                    String store2Name = bestAllocation.store2Names.get(j);
+                    
+                    // 从store2Stocks中获取该门店的库存
+                    int store2Stock = 0;
+                    if (bestAllocation.store2Stocks != null && j < bestAllocation.store2Stocks.size()) {
+                        store2Stock = bestAllocation.store2Stocks.get(j);
+                    }
+                    
+                    if (store2Stock > maxStore2Stock) {
+                        maxStore2Stock = store2Stock;
+                        bestStore2Name = store2Name;
+                        bestStore2Id = store2Id;
+                    }
+                }
+                
+                // 如果找到最佳门店2，则显示
+                if (bestStore2Name != null) {
+                    html.append("<div class='solution-store' style='flex:1;min-width:200px;'>门店2: " + bestStore2Name)
+                        .append(" (ID: " + bestStore2Id + ")")
+                        .append("<br>库存: " + maxStore2Stock + "</div>");
+                } else {
+                    // 如果没有找到，显示第一个门店2
+                    String store2Name = bestAllocation.store2Names.get(0);
+                    Long store2Id = bestAllocation.store2Ids.get(0);
+                    html.append("<div class='solution-store' style='flex:1;min-width:200px;'>门店2: " + store2Name)
+                        .append(" (ID: " + store2Id + ")</div>");
+                }
+            }
+            html.append("</div>");
+            
+            // 显示商品库存明细
+            html.append("<div style='display:flex;flex-wrap:wrap;gap:15px;'>")
+                .append("<div style='flex:1;min-width:300px;'>")
+                .append("<div class='solution-store' style='margin-bottom:8px;'>门店1商品库存</div>")
+                .append(generateItemCards(bestAllocation.store1Items))
+                .append("</div>")
+                .append("<div style='flex:1;min-width:300px;'>")
+                .append("<div class='solution-store' style='margin-bottom:8px;'>门店2商品库存</div>");
+            // 这里需要获取门店2的商品明细
+            // 暂时使用bestAllocation.store2Items，实际项目中可能需要根据选择的门店2获取对应的商品明细
+            html.append(generateItemCards(bestAllocation.store2Items))
+                .append("</div>")
+                .append("</div>")
+                .append("</div>");
+            
+            html.append("</div></div>");
+        }
+        
+        // 策略2: 所有两门店组合满足 (拆儅2次)
         if (!result.twoStoreAllocations.isEmpty()) {
             hasResults = true;
             // 限制显示前8条
             int displayCount = Math.min(10, result.twoStoreAllocations.size());
             html.append("<div class='strategy strategy-2'>")
-                .append("<h3>🔄 备选方案：两门店组合满足 <span class='split-badge'>拆单2次</span></h3>")
+                .append("<h3>🔄 所有两门店组合满足 <span class='split-badge'>拆单2次</span></h3>")
                 .append("<div class='summary'>找到 <strong>").append(result.twoStoreAllocations.size())
                 .append("</strong> 个两门店组合方案，需要拆单2次发货")
                 .append(displayCount < result.twoStoreAllocations.size() ? 
@@ -379,16 +568,16 @@ public class OrderAllocationService {
                 if (allocation.store2Names != null && !allocation.store2Names.isEmpty()) {
                     html.append("<div class='solution-store'>门店2: ")
                         .append("<select onchange='updateStore2Info(this)'>");
-                    
+
                     for (int j = 0; j < allocation.store2Names.size(); j++) {
                         html.append("<option value='").append(j).append("'>")
                             .append(allocation.store2Names.get(j))
                             .append(" (ID: ").append(allocation.store2Ids.get(j)).append(")")
                             .append("</option>");
                     }
-                    
+
                     html.append("</select></div>");
-                    
+
                     // 添加隐藏的门店2信息容器，用于动态显示选中的门店信息
                     html.append("<div id='store2-info-").append(i).append("' class='store2-details'>");
                     // 默认显示第一个门店2的信息
@@ -396,11 +585,11 @@ public class OrderAllocationService {
                         .append(" (ID: ").append(allocation.store2Ids.get(0)).append(")</div>");
                     html.append("</div>");
                 }
-                
+
                 // 显示门店1的商品明细
                 html.append(generateItemCards(allocation.store1Items));
                 html.append("<hr style='margin:8px 0;border:none;border-top:1px solid #eee;'>");
-                
+
                 // 显示门店2的商品明细
                 //html.append(generateItemCards(allocation.store2Items));
                 html.append("</div>");
@@ -466,15 +655,23 @@ public class OrderAllocationService {
     }
     
     /**
-     * 生成商品明细卡片（优化版：只显示条码号和库存，库存醒目显示）
+     * 生成商品明细卡片（优化版：只显示条码号和库存，库存醒目显示，按库存从大到小排序）
      */
     private String generateItemCards(List<JSONObject> items) {
         StringBuilder cards = new StringBuilder();
         cards.append("<div class='item-grid'>");
         
-        for (JSONObject item : items) {
+        // 按库存从大到小排序
+        List<JSONObject> sortedItems = new ArrayList<>(items);
+        sortedItems.sort((o1, o2) -> {
+            Integer qty1 = o1.getInteger("store_qty") != null ? o1.getInteger("store_qty") : 0;
+            Integer qty2 = o2.getInteger("store_qty") != null ? o2.getInteger("store_qty") : 0;
+            return qty2.compareTo(qty1); // 从大到小排序
+        });
+        
+        for (JSONObject item : sortedItems) {
             String barcodeNo = item.getString("barcode_no") != null ? item.getString("barcode_no") : "N/A";
-            Integer storeQty = item.getInteger("store_qty");
+            Integer storeQty = item.getInteger("store_qty") != null ? item.getInteger("store_qty") : 0;
             
             cards.append("<div class='item-card'>")
                 .append("<div class='item-header'>📦 条码: <span style='color:#2196F3; font-weight:bold;'>").append(barcodeNo).append("</span></div>")
@@ -726,10 +923,14 @@ public class OrderAllocationService {
         Long store1Id;
         String store1Name;
         List<JSONObject> store1Items;
+        int store1TotalStock; // 门店1库存合计
         List<Long> store2Ids;     // 修改为列表形式
         List<String> store2Names; // 修改为列表形式
         List<JSONObject> store2Items;
+        List<Integer> store2Stocks; // 门店2库存列表
         int splitCount; // 拆单次数
+        int store2TotalStock; // 门店2库存合计
+        int totalStock; // 门店1+门店2库存合计
     }
     
     private static class ThreeStoreAllocation {
