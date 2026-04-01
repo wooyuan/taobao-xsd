@@ -59,7 +59,7 @@ public class OrderAllocationService {
                 return generateErrorHtml("没有门店有足够的库存满足订单需求", orderId);
             }
             
-            // 构建数据结构便于分析
+            // 构建数据结构便于分析,我做下注解
             Map<Long, JSONObject> orderItemMap = new HashMap<>();
             for (int i = 0; i < orderDetails.size(); i++) {
                 JSONObject item = orderDetails.getJSONObject(i);
